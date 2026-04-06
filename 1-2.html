@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jeu de rôle : 스피드 쇼핑 Achats express</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tone.js for Sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        /* Prevent scrolling globally */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #FEFCE8; /* yellow-50 */
+            touch-action: none;
+            font-family: 'Inter', 'Noto Sans', sans-serif;
+            color: #1F2937; /* gray-800 */
+        }
+
+        /* Responsive Container constraints */
+        #app-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .lesson-card {
+            width: 92%;
+            max-width: 800px;
+            height: 90%;
+            max-height: 700px;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #FEF08A; /* yellow-200 */
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-pop-in {
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .recording-pulse {
+            animation: pulse-red 1.5s infinite;
+            background-color: #EF4444 !important; /* red-500 */
+            color: white !important;
+        }
+
+        .audio-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 24px;
+        }
+        .audio-wave span {
+            display: block;
+            width: 4px;
+            background-color: #22C55E; /* green-500 */
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .audio-wave span:nth-child(4) { animation-delay: 0.6s; }
+        
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 24px; }
+        }
+
+        /* Overlay */
+        #popup-overlay {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Selectable Items */
+        .selectable-item {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            filter: grayscale(100%) opacity(0.5);
+        }
+        .selectable-item.selected {
+            filter: grayscale(0%) opacity(1);
+            transform: scale(1.15);
+            background-color: #FEF08A; /* yellow-200 */
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Main Lesson Content Area -->
+        <div id="lesson-view" class="lesson-card pt-5 px-4 pb-4 md:pt-8 md:px-10 md:pb-5">
+            <!-- Content Area -->
+            <div id="content-area" class="flex-1 flex flex-col items-center justify-center text-center gap-4 md:gap-6 w-full min-h-0">
+                <!-- Dynamically injected content -->
+            </div>
+
+            <!-- Bottom Control Area -->
+            <div id="controls-area" class="w-full mt-auto pt-4 flex flex-col items-center border-t border-gray-100 shrink-0">
+                <!-- Integrated Progress Bar -->
+                <div id="progress-container" class="hidden w-full mb-3 px-1">
+                    <div class="flex justify-end text-xs text-gray-400 mb-1 font-semibold tracking-wider">
+                        <span id="progress-text">1/7</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1">
+                        <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="w-full flex justify-between items-center gap-2">
+                    <button id="btn-prev" class="hidden px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center text-sm">
+                        <i class="ph ph-arrow-left mr-1 text-base"></i> <span class="hidden md:inline">Précédent</span>
+                    </button>
+                    
+                    <button id="btn-popup-toggle" class="hidden px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg font-medium hover:bg-yellow-200 transition-colors text-sm flex items-center">
+                        <i class="ph ph-chat-centered-text mr-1 text-base"></i> <span class="hidden md:inline">Exercice</span>
+                    </button>
+                    
+                    <div class="flex-1"></div>
+                    
+                    <button id="btn-next" class="px-4 py-1.5 bg-green-500 text-white rounded-lg font-bold shadow-sm hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm">
+                        Commencer <i class="ph ph-arrow-right ml-1 text-base"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup Overlay -->
+        <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-5 md:p-8 w-[90%] max-w-[500px] flex flex-col items-center text-center animate-pop-in relative border-4 border-yellow-400">
+                <button id="btn-close-popup" class="absolute top-3 right-3 md:top-4 md:right-4 text-gray-400 hover:text-gray-700">
+                    <i class="ph ph-x text-xl md:text-2xl"></i>
+                </button>
+                
+                <div id="popup-content" class="w-full mt-2 flex flex-col items-center justify-center gap-4 md:gap-5">
+                    <!-- Injected Popup Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Lesson Data ---
+        const lessonData = [
+            {
+                id: 1, type: 'intro',
+                subtitle: "Mission débutant - Aller au convenience store",
+                title: "Jeu de rôle : 스피드 쇼핑 Achats express",
+                buttonText: "Commencer"
+            },
+            {
+                id: 2, type: 'mission-intro',
+                title: "Jeu de rôle : 스피드 쇼핑 Achats express",
+                missionKr: "편의점에 들어가서 초콜릿을 한 개 구매합니다. 결제를 하고 가게에서 나오면 됩니다.",
+                missionFr: "Entrez dans un « 편의점 » et achetez un chocolat. Puis, payez et sortez du magasin."
+            },
+            {
+                id: 3, type: 'store-entry',
+                popup: {
+                    type: 'visual-speaking',
+                    visual: "😀",
+                    audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888007/S-2_o1flck.mp3",
+                    speaking: {
+                        krTextBlank: "_____?",
+                        krTextFull: "안녕하세요?",
+                        frText: "Bonjour",
+                        reference: "안녕하세요",
+                        audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888032/S-3_w316i0.wav",
+                        threshold: 90
+                    }
+                }
+            },
+            {
+                id: 4, type: 'item-selection',
+                mission: "Choisissez l'article à acheter.",
+                items: ['🍫', '🥐', '🍔', '☕️', '🍙']
+            },
+            {
+                id: 5, type: 'payment-selection',
+                visual: "💵 3000 KRW",
+                audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775377285/S-6_zipywh.wav",
+                mission: "Carte de crédit ou espèces ?",
+                items: ['💳', '💵']
+            },
+            {
+                id: 6, type: 'store-exit',
+                popup: {
+                    type: 'visual-speaking',
+                    visual: "😄",
+                    audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3",
+                    speaking: {
+                        krTextBlank: "___ ___.",
+                        krTextFull: "안녕히 계세요.",
+                        frText: "Au revoir",
+                        reference: "안녕히 계세요",
+                        audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888071/S-5_cfeudu.wav",
+                        threshold: 80
+                    }
+                }
+            },
+            {
+                id: 7, type: 'outro-conditional'
+            }
+        ];
+
+        // --- App State ---
+        let currentIndex = 0;
+        let currentAudio = null;
+        let popupAudio = null;
+        
+        // Tone.js Synths
+        let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+        let doorbellSynth;
+        
+        // Page states to preserve selections and attempts
+        let pageStates = lessonData.map(() => ({
+            isPassed: false,
+            attemptsCount: 0,
+            selectedItems: [], // Used for page 4 & 5
+        }));
+        
+        // Recording state
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
+        const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+
+        // --- DOM Elements ---
+        const contentArea = document.getElementById('content-area');
+        const progressContainer = document.getElementById('progress-container');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const btnNext = document.getElementById('btn-next');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnPopupToggle = document.getElementById('btn-popup-toggle');
+        const popupOverlay = document.getElementById('popup-overlay');
+        const popupContent = document.getElementById('popup-content');
+        const btnClosePopup = document.getElementById('btn-close-popup');
+        const controlsArea = document.getElementById('controls-area');
+
+        // --- Init Audio Context ---
+        async function initSynths() {
+            if(!correctSound) {
+                await Tone.start();
+                correctSound = new Tone.Synth().toDestination();
+                completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                transitionSynth = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                transitionSynth.volume.value = -10;
+
+                errorSynth = new Tone.Synth({
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.4 }
+                }).toDestination();
+                errorSynth.volume.value = -10;
+
+                // Game specific synths
+                doorbellSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' }
+                }).toDestination();
+                doorbellSynth.volume.value = -8;
+            }
+        }
+
+        // --- Core Rendering ---
+        function updateProgress() {
+            if (currentIndex === 0 || currentIndex === lessonData.length - 1) {
+                progressContainer.classList.add('hidden');
+            } else {
+                progressContainer.classList.remove('hidden');
+                const pct = (currentIndex / (lessonData.length - 2)) * 100;
+                progressBar.style.width = `${pct}%`;
+                progressText.innerText = `${currentIndex}/${lessonData.length - 2}`;
+            }
+        }
+
+        function stopCurrentAudios() {
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+        }
+
+        function loadPage(index) {
+            stopCurrentAudios();
+            popupOverlay.classList.add('hidden');
+            btnPopupToggle.classList.add('hidden');
+            
+            // Back button logic & reset next button styles
+            btnNext.disabled = !pageStates[index].isPassed; 
+            btnNext.className = "px-4 py-1.5 bg-green-500 text-white rounded-lg font-bold shadow-sm hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm";
+            btnNext.classList.remove('hidden');
+
+            if (index > 0) {
+                btnPrev.classList.remove('hidden');
+            } else {
+                btnPrev.classList.add('hidden');
+            }
+
+            const data = lessonData[index];
+            updateProgress();
+
+            if (data.type === 'intro') {
+                contentArea.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-7xl md:text-8xl"></i></div>
+                    <div class="flex flex-col items-center gap-1 md:gap-2">
+                        <h3 class="text-sm md:text-base text-gray-500 font-bold tracking-wide animate-fade-in uppercase">${data.subtitle}</h3>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-green-600 animate-fade-in delay-100">${data.title}</h1>
+                    </div>
+                `;
+                btnNext.innerHTML = `${data.buttonText} <i class="ph ph-arrow-right ml-1 text-base"></i>`;
+                btnNext.disabled = false;
+                controlsArea.classList.remove('hidden');
+            } 
+            else if (data.type === 'mission-intro') {
+                btnNext.classList.add('hidden'); // Hide default next, we use custom buttons
+                contentArea.innerHTML = `
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 animate-fade-in">${data.title}</h2>
+                    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 md:p-6 w-full max-w-md flex flex-col items-center gap-2 md:gap-3 animate-fade-in delay-100 shrink">
+                        <div class="text-yellow-600 font-bold uppercase tracking-widest text-xs">Mission</div>
+                        <p class="text-lg md:text-xl text-gray-800 font-medium leading-relaxed">${data.missionKr}</p>
+                    </div>
+                    <div class="flex flex-col gap-2 md:gap-3 w-full max-w-sm animate-fade-in delay-200 shrink-0">
+                        <button id="btn-mission-start" class="w-full px-4 py-2.5 md:px-6 md:py-3 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition-colors flex items-center justify-center text-base md:text-lg">
+                            J’ai compris, c’est parti ! <i class="ph ph-arrow-right ml-2"></i>
+                        </button>
+                        <button id="btn-mission-help" class="w-full px-4 py-2.5 md:px-6 md:py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors flex items-center justify-center text-base md:text-lg">
+                            Attends, je n’ai pas compris ! <i class="ph ph-question ml-2"></i>
+                        </button>
+                    </div>
+                `;
+
+                pageStates[index].isPassed = true;
+
+                document.getElementById('btn-mission-start').onclick = () => {
+                    currentIndex++;
+                    loadPage(currentIndex);
+                };
+                document.getElementById('btn-mission-help').onclick = () => {
+                    showTextPopup(data.missionFr);
+                };
+            }
+            else if (data.type === 'store-entry') {
+                btnNext.classList.add('hidden');
+                
+                contentArea.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-door text-8xl md:text-[9rem]"></i></div>
+                    <button id="btn-enter-store" class="px-6 py-3 md:px-8 md:py-4 bg-green-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:bg-green-600 hover:scale-105 transition-all animate-fade-in">
+                        Entrer dans le magasin
+                    </button>
+                    <div id="entry-success-msg" class="hidden text-green-500 font-bold text-xl animate-fade-in flex items-center justify-center gap-1">
+                        <i class="ph-fill ph-check-circle"></i> Mission accomplie
+                    </div>
+                `;
+
+                const btnEnter = document.getElementById('btn-enter-store');
+                
+                // If already passed, show next button
+                if (pageStates[index].isPassed) {
+                    btnEnter.classList.add('hidden');
+                    document.getElementById('entry-success-msg').classList.remove('hidden');
+                    btnNext.innerHTML = `Suivant <i class="ph ph-arrow-right ml-1 text-base"></i>`;
+                    btnNext.classList.remove('hidden');
+                    btnNext.disabled = false;
+                }
+
+                btnEnter.onclick = () => {
+                    // Doorbell sound
+                    if(doorbellSynth) {
+                        doorbellSynth.triggerAttackRelease(["E5", "G5"], "8n");
+                        setTimeout(() => doorbellSynth.triggerAttackRelease(["C5", "E5"], "4n"), 300);
+                    }
+                    btnEnter.disabled = true;
+                    btnEnter.classList.add('opacity-50');
+                    
+                    // Show popup sequence after doorbell
+                    setTimeout(() => {
+                        showPopupSequence(data.popup);
+                    }, 1000);
+                };
+            }
+            else if (data.type === 'item-selection') {
+                btnNext.innerHTML = `J'ai fini de choisir. Je vais passer à la caisse <i class="ph ph-arrow-right ml-1 text-base"></i>`;
+                // Override default next button style to make it more prominent
+                btnNext.className = "px-4 py-2 bg-blue-500 text-white rounded-lg font-bold shadow-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm w-full md:w-auto justify-center";
+                
+                let itemsHtml = data.items.map(item => {
+                    const isSelected = pageStates[index].selectedItems.includes(item);
+                    return `<div class="selectable-item text-5xl md:text-7xl p-2 md:p-4 flex items-center justify-center ${isSelected ? 'selected' : ''}" data-item="${item}">${item}</div>`;
+                }).join('');
+
+                contentArea.innerHTML = `
+                    <h2 class="text-xl md:text-2xl font-extrabold text-gray-800 animate-fade-in">${data.mission}</h2>
+                    <div class="flex flex-wrap justify-center gap-3 md:gap-6 animate-fade-in delay-100 w-full shrink">
+                        ${itemsHtml}
+                    </div>
+                `;
+
+                // Set initial Next button state based on saved selections
+                btnNext.disabled = pageStates[index].selectedItems.length === 0;
+
+                const itemEls = document.querySelectorAll('.selectable-item');
+                itemEls.forEach(el => {
+                    el.onclick = () => {
+                        const val = el.getAttribute('data-item');
+                        const arr = pageStates[index].selectedItems;
+                        
+                        if (arr.includes(val)) {
+                            arr.splice(arr.indexOf(val), 1);
+                            el.classList.remove('selected');
+                        } else {
+                            arr.push(val);
+                            el.classList.add('selected');
+                        }
+                        
+                        btnNext.disabled = arr.length === 0;
+                        if(arr.length > 0) pageStates[index].isPassed = true;
+                    };
+                });
+            }
+            else if (data.type === 'payment-selection') {
+                btnNext.innerHTML = `Voici ! <i class="ph ph-arrow-right ml-1 text-base"></i>`;
+                btnNext.className = "px-6 py-2 bg-green-500 text-white rounded-lg font-bold shadow-sm hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm";
+                
+                let itemsHtml = data.items.map(item => {
+                    const isSelected = pageStates[index].selectedItems.includes(item);
+                    return `<div class="payment-item selectable-item flex flex-col items-center justify-center text-6xl md:text-7xl p-3 md:p-6 bg-white border-2 border-gray-100 rounded-2xl shadow-sm ${isSelected ? 'selected border-yellow-400' : ''}" data-item="${item}">${item}</div>`;
+                }).join('');
+
+                contentArea.innerHTML = `
+                    <div class="text-2xl md:text-4xl font-bold text-green-600 bg-green-50 px-4 py-2 md:px-6 md:py-3 rounded-xl animate-fade-in shrink-0">${data.visual}</div>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 animate-fade-in delay-100">${data.mission}</h2>
+                    <div class="flex justify-center gap-4 md:gap-6 animate-fade-in delay-200 w-full shrink">
+                        ${itemsHtml}
+                    </div>
+                `;
+
+                btnNext.disabled = pageStates[index].selectedItems.length === 0;
+
+                // Play cashier price audio
+                if(data.audio) {
+                    currentAudio = new Audio(data.audio);
+                    currentAudio.play().catch(e=>console.log(e));
+                }
+
+                const itemEls = document.querySelectorAll('.payment-item');
+                itemEls.forEach(el => {
+                    el.onclick = () => {
+                        const val = el.getAttribute('data-item');
+                        // Single selection for payment
+                        pageStates[index].selectedItems = [val];
+                        
+                        itemEls.forEach(i => i.classList.remove('selected', 'border-yellow-400'));
+                        el.classList.add('selected', 'border-yellow-400');
+                        
+                        btnNext.disabled = false;
+                        pageStates[index].isPassed = true;
+                    };
+                });
+            }
+            else if (data.type === 'store-exit') {
+                btnNext.innerHTML = `Suivant <i class="ph ph-arrow-right ml-1 text-base"></i>`;
+                btnNext.classList.add('hidden'); // hidden until interaction passes
+
+                contentArea.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-bag text-7xl md:text-8xl"></i></div>
+                    <div class="flex flex-col items-center gap-1 md:gap-2">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-800 animate-fade-in">Vous avez payé !</h2>
+                        <p class="text-base md:text-lg text-gray-500 animate-fade-in">Préparez-vous à dire au revoir.</p>
+                    </div>
+                `;
+
+                if (pageStates[index].isPassed) {
+                    btnNext.classList.remove('hidden');
+                    btnNext.disabled = false;
+                    contentArea.innerHTML = `
+                        <div class="text-green-500 animate-fade-in"><i class="ph-fill ph-check-circle text-7xl md:text-8xl"></i></div>
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-800 animate-fade-in">Mission accomplie</h2>
+                    `;
+                } else {
+                    // Automatically trigger exit sequence after a tiny delay
+                    setTimeout(() => {
+                        showPopupSequence(data.popup);
+                    }, 800);
+                }
+            }
+            else if (data.type === 'outro-conditional') {
+                controlsArea.classList.add('hidden');
+                
+                // Get selected items from Page 4 (index 3)
+                const itemsSelected = pageStates[3].selectedItems;
+                const isSuccess = itemsSelected.length === 1 && itemsSelected[0] === '🍫';
+
+                // Play standard completion sound
+                if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+
+                let html = '';
+                if (isSuccess) {
+                    html = `
+                        <div class="text-yellow-500 animate-pop-in"><i class="ph-fill ph-confetti text-7xl md:text-8xl"></i></div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-green-600 animate-fade-in">Félicitations 🥳</h2>
+                        <p class="text-lg md:text-xl text-gray-700 leading-relaxed max-w-lg text-center animate-fade-in delay-100">
+                            Vous avez réussi votre premier achat. À présent, passez au Chapitre 2 avec confiance.
+                        </p>
+                    `;
+                } else {
+                    html = `
+                        <div class="text-gray-400 animate-pop-in"><i class="ph-fill ph-smiley-sad text-7xl md:text-8xl"></i></div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-gray-600 animate-fade-in">Quel dommage 🥲</h2>
+                        <p class="text-lg md:text-xl text-gray-700 leading-relaxed max-w-lg text-center animate-fade-in delay-100">
+                            Cette mission consistait à choisir un 🍫. Mais ce n'est pas grave ! N'hésitez pas à retenter la prochaine fois.
+                        </p>
+                    `;
+                }
+
+                contentArea.innerHTML = html;
+                window.parent.postMessage({ type: 'lesson_complete' }, '*');
+            }
+        }
+
+        // --- Custom Popup Renderers ---
+        function showTextPopup(text) {
+            popupContent.innerHTML = `
+                <div class="text-blue-500"><i class="ph-fill ph-info text-5xl md:text-6xl"></i></div>
+                <p class="text-base md:text-xl text-gray-800 font-medium leading-relaxed">${text}</p>
+                <button id="btn-close-text-popup" class="w-full px-4 py-2.5 md:px-6 md:py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors text-sm md:text-base shrink-0">
+                    Fermer
+                </button>
+            `;
+            popupOverlay.classList.remove('hidden');
+            
+            document.getElementById('btn-close-text-popup').onclick = () => {
+                popupOverlay.classList.add('hidden');
+            };
+        }
+
+        function showPopupSequence(popupObj) {
+            popupOverlay.classList.remove('hidden');
+            
+            if (popupObj.type === 'visual-speaking') {
+                const state = pageStates[currentIndex];
+                
+                // Show visual & wave, play audio
+                popupContent.innerHTML = `
+                    <div class="text-7xl md:text-8xl animate-pop-in">${popupObj.visual}</div>
+                    <div id="popup-wave" class="audio-wave"><span></span><span></span><span></span><span></span></div>
+                `;
+                
+                if(popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+                popupAudio = new Audio(popupObj.audio);
+                popupAudio.play().catch(e=>console.log(e));
+                
+                popupAudio.onended = () => {
+                    document.getElementById('popup-wave').classList.add('hidden');
+                    // Render speaking task inside same popup
+                    setTimeout(() => {
+                        renderSpeakingTask(popupObj.speaking, state);
+                    }, 500);
+                };
+            }
+        }
+
+        function renderSpeakingTask(speakingData, state) {
+            let showFullText = state.isPassed; // 통과 또는 2회 시도 종료 시에만 텍스트 공개
+            let showPlayBtn = state.isPassed || state.attemptsCount >= 1; // 1회 실패 시 재생 버튼 공개
+            let contentHtml = `
+                <div class="flex flex-col items-center justify-center gap-1 md:gap-2">
+                    <h2 id="speaking-target" class="text-2xl md:text-4xl font-extrabold text-gray-800 tracking-wider">${showFullText ? speakingData.krTextFull : speakingData.krTextBlank}</h2>
+                    <p class="text-sm md:text-lg text-gray-500">${speakingData.frText}</p>
+                </div>
+                
+                <div class="flex items-center justify-center gap-3 md:gap-4 shrink-0 mt-2">
+                    <button id="btn-popup-play" class="w-14 h-14 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-md hover:bg-yellow-500 transition-colors ${showPlayBtn && speakingData.audio ? '' : 'hidden'}">
+                        <i class="ph-fill ph-play text-2xl"></i>
+                    </button>
+                    <button id="btn-popup-record" class="w-16 h-16 ${state.isPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600 hover:scale-105'} text-white rounded-full flex items-center justify-center shadow-lg transition-all transform" ${state.isPassed ? 'disabled' : ''}>
+                        <i class="ph-fill ph-microphone text-3xl"></i>
+                    </button>
+                </div>
+                
+                <p id="popup-status" class="text-sm font-medium ${state.isPassed ? 'text-green-500 font-bold' : 'text-gray-500'} h-5 flex items-center justify-center mt-2">
+                    ${state.isPassed ? 'Déjà terminé !' : `Appuyez pour répondre (${state.attemptsCount}/2)`}
+                </p>
+                
+                <button id="btn-popup-next" class="px-6 py-2 bg-blue-500 text-white rounded-full font-bold text-base shadow hover:bg-blue-600 ${state.isPassed ? '' : 'hidden'} flex items-center justify-center shrink-0 mt-2">
+                    Continuer <i class="ph ph-arrow-right ml-2"></i>
+                </button>
+            `;
+
+            popupContent.innerHTML = contentHtml;
+
+            const btnPlay = document.getElementById('btn-popup-play');
+            const btnRecord = document.getElementById('btn-popup-record');
+            const btnPopupNext = document.getElementById('btn-popup-next');
+
+            if(btnPopupNext) {
+                btnPopupNext.onclick = () => {
+                    popupOverlay.classList.add('hidden');
+                    // Proceed directly to the next page
+                    btnNext.disabled = false;
+                    btnNext.click(); 
+                };
+            }
+
+            if(btnPlay && speakingData.audio) {
+                btnPlay.onclick = () => {
+                    if(btnRecord && !state.isPassed) {
+                        btnRecord.disabled = true;
+                        btnRecord.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+
+                    if(popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+                    popupAudio = new Audio(speakingData.audio);
+                    popupAudio.play();
+                    
+                    const originalIcon = btnPlay.innerHTML;
+                    btnPlay.innerHTML = `<i class="ph-fill ph-speaker-high text-2xl"></i>`;
+
+                    popupAudio.onended = () => {
+                        btnPlay.innerHTML = originalIcon; 
+                        if(btnRecord && !state.isPassed) {
+                            btnRecord.disabled = false;
+                            btnRecord.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    };
+                };
+            }
+
+            if(btnRecord) {
+                btnRecord.onclick = () => toggleRecording(speakingData, btnRecord);
+            }
+        }
+
+        btnClosePopup.onclick = () => {
+            popupOverlay.classList.add('hidden');
+            // If closed on page 3 or 6 without passing, we should show the play button again inside content area, 
+            // but for simplicity we rely on them opening the popup via 'Exercice' button.
+            if(currentIndex === 2 || currentIndex === 5) {
+                btnPopupToggle.classList.remove('hidden');
+            }
+        };
+
+        btnPopupToggle.onclick = () => {
+            const data = lessonData[currentIndex];
+            if(data.popup) {
+                showPopupSequence(data.popup);
+            }
+        };
+
+        // --- Speech Recognition (Clova API) ---
+        async function toggleRecording(speakingData, btnEl) {
+            if (isRecording) {
+                stopRecording();
+                btnEl.classList.remove('recording-pulse');
+                btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-2xl"></i>`;
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    await processAudioBlob(audioBlob, speakingData, btnEl);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btnEl.classList.add('recording-pulse');
+                btnEl.innerHTML = `<i class="ph-fill ph-stop text-2xl"></i>`;
+                
+                const status = document.getElementById('popup-status');
+                if(status) { status.innerText = "Écoute en cours..."; status.className = 'mt-4 text-sm font-medium text-red-500 h-5'; }
+
+            } catch (err) {
+                console.error("Mic access error:", err);
+                alert("L'accès au microphone est requis pour cet exercice.");
+            }
+        }
+
+        function stopRecording() {
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+        }
+
+        async function processAudioBlob(blob, speakingData, btnEl) {
+            const status = document.getElementById('popup-status');
+            
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result.split(',')[1];
+                    
+                    try {
+                        const res = await fetch(CLOVA_API_FUNCTION_URL, {
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                audioBase64: base64data, 
+                                languageCode: "Kor", 
+                                referenceText: speakingData.reference 
+                            })
+                        });
+                        
+                        if (!res.ok) {
+                            console.warn("API Error:", res.status, "- Using fallback evaluation.");
+                            handleEvaluation(100, speakingData, btnEl, status, true);
+                            return;
+                        }
+
+                        const result = await res.json();
+                        const score = result.assessment?.pronunciation_score || 0;
+                        
+                        handleEvaluation(score, speakingData, btnEl, status);
+
+                    } catch (apiError) {
+                        console.warn("API request failed:", apiError.message, "- Using fallback evaluation.");
+                        handleEvaluation(100, speakingData, btnEl, status, true); 
+                    }
+                };
+            } catch (err) {
+                console.warn("Processing error", err);
+                handleEvaluation(0, speakingData, btnEl, status);
+            }
+        }
+
+        function handleEvaluation(score, speakingData, btnEl, status, isFallback = false) {
+            const state = pageStates[currentIndex];
+            state.attemptsCount++;
+            let attempts = state.attemptsCount;
+            let passThreshold = speakingData.threshold || 90; // Default 90, Page 6 sets to 80
+            
+            btnEl.innerHTML = `<i class="ph-fill ph-microphone text-2xl"></i>`;
+            
+            if (score >= passThreshold || attempts >= 2) {
+                state.isPassed = true;
+                if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                
+                status.innerHTML = score >= passThreshold ? `Très bien ! (Score: ${Math.round(score)})` : `Exercice terminé. (Score: ${Math.round(score)})`;
+                status.className = score >= passThreshold ? 'mt-4 text-sm font-bold text-green-500 h-5' : 'mt-4 text-sm font-medium text-gray-600 h-5';
+                
+                document.getElementById('speaking-target').innerText = speakingData.krTextFull; // 통과 또는 최종 시도 시 텍스트 공개
+                
+                const btnPlay = document.getElementById('btn-popup-play');
+                if (btnPlay && speakingData.audio) btnPlay.classList.remove('hidden');
+
+                btnEl.disabled = true;
+                btnEl.classList.replace('bg-green-500', 'bg-gray-300');
+                
+                const btnPopupNext = document.getElementById('btn-popup-next');
+                if(btnPopupNext) btnPopupNext.classList.remove('hidden');
+                
+                // Unhide the main next button behind the popup
+                btnNext.classList.remove('hidden');
+                btnNext.disabled = false;
+
+            } else {
+                // Fail 1st time
+                if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                status.innerHTML = `Essayez encore ! (Score: ${Math.round(score)} - ${attempts}/2)`;
+                status.className = 'mt-4 text-sm font-medium text-yellow-600 h-5';
+                // 1회 실패 시 텍스트 비공개 유지
+                
+                const btnPlay = document.getElementById('btn-popup-play');
+                if (btnPlay && speakingData.audio) btnPlay.classList.remove('hidden'); // 오디오 버튼은 공개
+            }
+        }
+
+        // --- Navigation ---
+        btnNext.addEventListener('click', async () => {
+            if(currentIndex === 0) {
+                await initSynths(); 
+            }
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
+            
+            currentIndex++;
+            loadPage(currentIndex);
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                if(transitionSynth) transitionSynth.triggerAttackRelease('C5', '0.05s');
+                currentIndex--;
+                loadPage(currentIndex);
+            }
+        });
+
+        // Initialize first page
+        loadPage(currentIndex);
+
+    </script>
+</body>
+</html>
