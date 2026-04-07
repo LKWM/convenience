@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mission débutant - Aller au convenience store - Leçon 2</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tone.js for Sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        /* 1. Reset & Layout Fundamentals */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #FEFCE8; 
+            touch-action: none;
+            font-family: 'Inter', 'Noto Sans', sans-serif;
+            color: #1F2937;
+        }
+
+        /* 2. Responsive Application Container */
+        #app-container {
+            width: 100vw;
+            height: 100dvh; 
+            padding: clamp(10px, 3vh, 2rem);
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3. The Main Card */
+        .lesson-card {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            background: white;
+            border-radius: 1.5rem;
+            border: 2px solid #FEF08A;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 4. Perfect Vertical Centering Mechanics for Content */
+        #content-area {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;    
+            padding: clamp(1.5rem, 4vw, 3rem); 
+            gap: clamp(1.5rem, 4vh, 2.5rem);
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* 5. Fluid Typography & Icons */
+        .text-title { font-size: clamp(1.5rem, 5vw, 2.5rem); line-height: 1.2; font-weight: 800; }
+        .text-body { font-size: clamp(1rem, 3vw, 1.25rem); line-height: 1.5; color: #374151; }
+        .text-icon { font-size: clamp(3.5rem, 10vw, 5rem); }
+
+        /* 6. Vocab & Answer Card (Chunky Button Style) */
+        .vocab-box {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1rem 2.5rem;
+            border: 3px solid #FEF08A;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            width: fit-content;
+            text-align: center;
+            box-shadow: 0 6px 0px 0px #FEF08A;
+            margin-bottom: 6px;
+        }
+        .vocab-box:hover { transform: translateY(-2px); box-shadow: 0 8px 0px 0px #FEF08A; background: #FFFBEB; }
+        .vocab-box:active { transform: translateY(4px); box-shadow: 0 2px 0px 0px #FEF08A; }
+
+        /* 7. Animations & Utilities */
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .animate-pop-in { animation: popIn 0.3s ease-out forwards; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+
+        .recording-pulse { animation: pulse-red 1.5s infinite; background-color: #EF4444 !important; color: white !important; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        .audio-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 100%; }
+        .audio-wave span { display: block; width: 4px; background-color: #22C55E; border-radius: 2px; animation: wave 1s infinite ease-in-out; }
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .audio-wave span:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes wave { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+        #popup-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        
+        .control-btn {
+            padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: clamp(0.875rem, 2vw, 1rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="lesson-view" class="lesson-card">
+            <div id="content-area"></div>
+
+            <!-- Bottom Control Area -->
+            <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3">
+                <div id="progress-container" class="hidden w-full flex-col gap-1">
+                    <div class="flex justify-end w-full leading-none">
+                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/12</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1">
+                        <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center w-full">
+                    <div class="flex items-center gap-2">
+                        <button id="btn-prev" class="invisible control-btn bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="ph ph-arrow-left mr-1"></i> <span class="hidden sm:inline">Précédent</span>
+                        </button>
+                        <button id="btn-popup-toggle" class="invisible control-btn bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                            <i class="ph ph-chat-centered-text mr-1"></i> <span class="hidden sm:inline">Exercice</span>
+                        </button>
+                    </div>
+                    <button id="btn-next" class="control-btn bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        <span id="btn-next-text">Commencer</span> <i id="btn-next-icon" class="ph ph-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
+            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+                <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                    <i class="ph ph-x text-2xl"></i>
+                </button>
+                <div id="popup-content" class="w-full flex flex-col items-center justify-center gap-5"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lessonData = [
+            { id: 1, type: 'intro', subtitle: "Mission débutant - Aller au convenience store", title: "Leçon 2. Avez-vous besoin d’un sac ?", buttonText: "Commencer" },
+            { id: 2, type: 'text-audio', text: "Bonjour ! Ravi de vous revoir. Dans ce chapitre, nous allons nous entraîner à dire les phrases que l'on utilise au moment de passer à la caisse dans un « 편의점 ». Tout d'abord, une fois que vous avez fini de choisir vos articles, il suffit d'aller à la caisse et d'y déposer vos achats. Et s'il y a du monde, vous devez faire la queue.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292558/2-1_cqo9iq.wav" },
+            { id: 3, type: 'text-audio-popup', text: "Au moment de payer, il y a une question que le caissier pose très souvent. Écoutez bien.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292573/2-2_eyxdet.mp3", popup: { type: 'audio-only', krText: "적립하세요?", frText: "Accumulez-vous les points de fidélité ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292478/2-S1_upvxg6.mp3" } },
+            { id: 4, type: 'text-audio-popup', vocab: { kr: "적립하다", fr: "épargner, rassembler", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775321957/%E1%84%8C%E1%85%A5%E1%86%A8%E1%84%85%E1%85%B5%E1%86%B8_aewblf.wav" }, text: "Le mot « 적립하다 » signifie épargner ou rassembler. Mais à la caisse, il s’agit plutôt de demander si vous cumulez des points de fidélité. <br><br> On peut poser cette question d’une autre manière.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775293766/2-3_tzzs5g.mp3", popup: { type: 'audio-only', krText: "포인트 있으세요?", frText: "Avez-vous les points de fidélité ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292480/2-S2_onmpsx.mp3" } },
+            { id: 5, type: 'text-audio-popup', text: "Dans un « 편의점 », on cumule généralement les points de fidélité via l'application d'un opérateur mobile coréen ou avec son numéro de téléphone. Si vous êtes en voyage ou si vous résidez en Corée pour une courte durée, vous n'allez probablement pas cumuler de points. Dans ce cas, vous pouvez répondre comme ceci.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292552/2-4_ah3cv0.mp3", popup: { type: 'repeat', krText: "아니요, 없어요.", frText: "Non, je n’en ai pas.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292484/2-S3_h0vhas.mp3", reference: "아니요 없어요", threshold: 80 } },
+            { id: 6, type: 'text-audio-popup', text: "Très bien ! Après avoir vérifié si vous cumulez des points, il y a une autre question que le caissier va vous poser. Écoutez bien.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292561/2-5_caloe4.mp3", popup: { type: 'audio-only', krText: "봉투 100원인데 필요하세요?", frText: "Le sac coûte 100 won. En avez-vous besoin ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3" } },
+            { id: 7, type: 'text-audio-popup', vocab: { kr: "봉투", fr: "sac plastique", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775322048/%E1%84%87%E1%85%A9%E1%86%BC%E1%84%90%E1%85%AE_sbtsuu.wav" }, text: "Un sac en plastique est généralement appelé « 봉투 ». Comme dans beaucoup d'autres pays, la loi en Corée interdit de fournir des sacs en plastique gratuitement afin de réduire l'utilisation de produits à usage unique. <br><br> Comme c'est un article payant, le caissier vous demandera si vous avez besoin d'un sac. Répondez que vous en avez besoin.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292579/2-6_fc9zrc.mp3", popup: { type: 'repeat', krText: "네, 주세요.", frText: "Oui, donnez-moi.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292490/2-S5_ohv9ni.mp3", reference: "네 주세요", threshold: 80 } },
+            { id: 8, type: 'text-audio-popup', text: "Très bien. Cette fois-ci, répondez que vous n'en avez pas besoin.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292555/2-7_qalo8n.mp3", popup: { type: 'repeat', krText: "아니요, 괜찮아요.", frText: "Non, ça va.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292493/2-S6_esbiiw.mp3", reference: "아니요 괜찮아요", threshold: 80 } },
+            { id: 9, type: 'text-audio-popup', text: "Après avoir vérifié les points de fidélité et acheté le sac, il est temps de payer. Une fois que le caissier aura scanné vos articles, il vous dira le prix en coréen. <br><br> Ce n'est pas grave si vous ne savez pas encore compter en coréen ! À la caisse du « 편의점 », il y a un écran où vous pouvez voir le montant écrit en chiffres.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292567/2-8_sbwebv.mp3", popup: { type: 'audio-only', krText: "삼천원입니다.", frText: "Il coûte 3000 KRW.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292497/2-S7_lz9y45.mp3" } },
+            { id: 10, type: 'text-audio-popup', text: "Puisque vous avez vérifié le montant, il faut payer ! Dites « voici » en passant vos espèces ou votre carte.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292564/2-9_oafbsh.mp3", popup: { type: 'repeat', krText: "여기요.", frText: "Voici.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292500/2-S8_j0yezl.mp3", reference: "여기요", threshold: 80 } },
+            { id: 11, type: 'text-audio-popup', text: "Parfait! C'est vraiment la dernière question maintenant. Écoutez bien !", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292576/2-10_ilcez8.mp3", popup: { type: 'audio-only', krText: "영수증 드릴까요?", frText: "Voulez-vous le ticket ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3" } },
+            { 
+                id: 12, type: 'text-audio-complex-popup', 
+                text: "Choisissez la réponse que vous préférez et répondez à la question !", 
+                audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292582/2-11_y1ciiz.mp3", 
+                popup: { 
+                    type: 'speaking-quiz', 
+                    options: [
+                        { kr: "네, 주세요.", fr: "Oui, donnez-moi.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292490/2-S5_ohv9ni.mp3" },
+                        { kr: "아니요, 괜찮아요.", fr: "Non, ça va.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292493/2-S6_esbiiw.mp3" }
+                    ],
+                    reference: "네 주세요|아니요 괜찮아요", 
+                    threshold: 70, 
+                    maxAttempts: 3 
+                } 
+            },
+            { id: 13, type: 'outro', text: "Fantastique ! Vous avez beaucoup appris aujourd'hui ! Révisez les expressions dans la section « 100% Oral », et complétez le paiement comme si vous étiez vraiment dans un « 편의점 » grâce au jeu de rôle. Alors, on se retrouve dans la prochaine leçon !", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292585/2-12_g3kwsx.mp3" }
+        ];
+
+        let currentIndex = 0;
+        let currentAudio = null;
+        let popupAudio = null;
+        let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+        let pageStates = lessonData.map(() => ({ isPassed: false, attemptsCount: 0 }));
+        let mediaRecorder, audioChunks = [], isRecording = false;
+
+        const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
+        const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+
+        async function initSynths() {
+            if(!correctSound) {
+                await Tone.start();
+                correctSound = new Tone.Synth().toDestination();
+                completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                transitionSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                errorSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.4 } }).toDestination();
+            }
+        }
+
+        function updateProgress() {
+            const container = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            const text = document.getElementById('progress-text');
+            if (currentIndex === 0) container.classList.add('hidden');
+            else {
+                container.classList.remove('hidden'); container.classList.add('flex');
+                const total = lessonData.length - 1; 
+                bar.style.width = `${(currentIndex / total) * 100}%`;
+                text.innerText = `${currentIndex}/${total}`;
+            }
+        }
+
+        function loadPage(index) {
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+            document.getElementById('popup-overlay').classList.add('hidden');
+            document.getElementById('btn-popup-toggle').classList.add('invisible');
+            
+            const nextBtn = document.getElementById('btn-next');
+            nextBtn.disabled = !pageStates[index].isPassed; 
+            
+            if(index === 0) document.getElementById('btn-prev').classList.add('invisible'); 
+            else document.getElementById('btn-prev').classList.remove('invisible');
+
+            const data = lessonData[index];
+            updateProgress();
+
+            const area = document.getElementById('content-area');
+            if (data.type === 'intro') {
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-icon"></i></div>
+                    <div class="flex flex-col items-center justify-center gap-2 w-full text-center">
+                        <h3 class="text-[clamp(0.75rem,2vw,1rem)] text-gray-500 font-bold uppercase m-0 tracking-wide">${data.subtitle}</h3>
+                        <h1 class="text-title text-green-600 animate-fade-in delay-100 m-0 leading-tight">${data.title}</h1>
+                    </div>
+                `;
+                document.getElementById('btn-next-text').innerText = data.buttonText;
+                nextBtn.disabled = false;
+            } else if (data.type === 'outro') {
+                document.getElementById('controls-area').classList.add('hidden');
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-pop-in"><i class="ph-fill ph-confetti text-icon"></i></div>
+                    <div class="text-body max-w-2xl text-center animate-fade-in">${data.text}</div>
+                `;
+                if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+                playMainAudio(data);
+            } else {
+                document.getElementById('btn-next-text').innerText = "Suivant";
+                document.getElementById('controls-area').classList.remove('hidden');
+                let vocabHtml = "";
+                if(data.vocab) {
+                    vocabHtml = `<div class="vocab-box animate-fade-in" onclick="new Audio('${data.vocab.audio}').play();"><div class="font-bold text-2xl text-gray-800">${data.vocab.kr}</div><div class="text-sm font-semibold text-gray-500 mt-1">${data.vocab.fr}</div></div>`;
+                }
+                area.innerHTML = `${vocabHtml}<div class="text-body max-w-2xl text-center animate-fade-in text-gray-800">${data.text}</div>`;
+                
+                if (!data.type.includes('popup')) { 
+                    nextBtn.disabled = false; 
+                    pageStates[index].isPassed = true; 
+                } else if (pageStates[index].isPassed) {
+                    document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                }
+                playMainAudio(data);
+            }
+        }
+
+        function playMainAudio(data) {
+            if(!data.audio) return;
+            currentAudio = new Audio(data.audio);
+            currentAudio.play().catch(() => {});
+            currentAudio.onended = () => {
+                if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
+                if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+            };
+        }
+
+        function showPopupSequence(lessonObj) {
+            const overlay = document.getElementById('popup-overlay');
+            const content = document.getElementById('popup-content');
+            overlay.classList.remove('hidden');
+            const state = pageStates[currentIndex];
+            
+            // 12페이지 팝업에서 질문 반복 오디오 단계 삭제 및 즉시 과제 렌더링
+            renderTask(lessonObj.popup || lessonObj, state); 
+        }
+
+        function renderTask(taskData, state) {
+            const isAudioOnly = taskData.type === 'audio-only';
+            const isSpeakingQuiz = taskData.type === 'speaking-quiz';
+            const isRepeat = taskData.type === 'repeat';
+            const content = document.getElementById('popup-content');
+            let contentHtml = '';
+
+            if (isAudioOnly) {
+                contentHtml = `
+                    <div class="text-yellow-500 m-0"><i class="ph-fill ph-speaker-high text-6xl"></i></div>
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        <h2 class="text-2xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
+                    </div>
+                    <button id="btn-popup-play" class="px-6 py-3 bg-green-500 text-white rounded-full font-bold shadow-md hover:bg-green-600 w-full max-w-[200px] flex items-center justify-center"><i class="ph-fill ph-play mr-2 text-xl"></i> Écouter</button>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 ${state.isPassed ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed ? '' : 'disabled'}>Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            } else if (isSpeakingQuiz) {
+                // 12페이지 팝업: 타이틀/서브타이틀 삭제. 오디오 카드 2개 + 마이크 + 상태창만 배치.
+                let optionsHtml = `<div class="w-full flex flex-col items-center gap-2">` + taskData.options.map(opt => `
+                    <div class="vocab-box !py-2 !px-8 !text-sm !mb-0 !shadow-[0_4px_0_0_#FEF08A] !border-2" onclick="new Audio('${opt.audio}').play();">
+                        <div class="font-bold text-gray-800">${opt.kr}</div>
+                        <div class="text-[10px] text-gray-500">${opt.fr}</div>
+                    </div>`).join('') + `</div>`;
+
+                contentHtml = `
+                    ${optionsHtml}
+                    <div class="flex items-center justify-center gap-5 w-full h-16 mt-2">
+                        <button id="btn-popup-record" class="w-16 h-16 ${state.isPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-3xl"></i></button>
+                    </div>
+                    <div class="flex items-center justify-center min-h-[3rem] w-full">
+                        <p id="popup-status" class="text-sm font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full">${state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez pour répondre'}</p>
+                    </div>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 ${state.isPassed ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed ? '' : 'disabled'}>Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            } else if (isRepeat) {
+                contentHtml = `
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
+                    </div>
+                    <div class="flex items-center justify-center gap-5 w-full h-16">
+                        <button id="btn-popup-play" class="w-14 h-14 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md hover:bg-yellow-500 transition-colors"><i class="ph-fill ph-play text-2xl"></i></button>
+                        <button id="btn-popup-record" class="w-16 h-16 ${state.isPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-3xl"></i></button>
+                    </div>
+                    <div class="flex items-center justify-center min-h-[3rem] w-full">
+                        <p id="popup-status" class="text-sm font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full">${state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler'}</p>
+                    </div>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 ${state.isPassed ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed ? '' : 'disabled'}>Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            }
+
+            content.innerHTML = contentHtml;
+            const bPlay = document.getElementById('btn-popup-play');
+            const bRecord = document.getElementById('btn-popup-record');
+            const bNextPop = document.getElementById('btn-popup-next');
+
+            if(bNextPop) bNextPop.onclick = () => { 
+                document.getElementById('popup-overlay').classList.add('hidden'); 
+                const nextBtn = document.getElementById('btn-next');
+                nextBtn.disabled = false;
+                nextBtn.click(); 
+            };
+            if(bPlay) {
+                bPlay.onclick = () => {
+                    if (isRecording) return;
+                    if(bRecord && !state.isPassed) { bRecord.disabled = true; bRecord.classList.add('opacity-50', 'pointer-events-none'); }
+                    if(popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+                    popupAudio = new Audio(taskData.audio); popupAudio.play();
+                    const orig = bPlay.innerHTML; bPlay.innerHTML = isAudioOnly ? `<div class="audio-wave"><span></span><span></span><span></span><span></span></div>` : `<i class="ph-fill ph-speaker-high"></i>`;
+                    popupAudio.onended = () => {
+                        bPlay.innerHTML = orig; 
+                        if(bRecord && !state.isPassed) { bRecord.disabled = false; bRecord.classList.remove('opacity-50', 'pointer-events-none'); }
+                        if (isAudioOnly) {
+                            state.isPassed = true; document.getElementById('btn-next').disabled = false;
+                            const st = document.getElementById('popup-status'); if(st) { st.innerHTML = `Très bien ! Passez à la suite.`; st.className = 'text-sm md:text-base font-bold text-green-500 text-center w-full'; }
+                            if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                        }
+                    };
+                };
+                if (!state.isPassed && !isSpeakingQuiz) setTimeout(() => bPlay.click(), 300);
+            }
+            if(bRecord) bRecord.onclick = () => toggleRecording(taskData, bRecord);
+        }
+
+        async function toggleRecording(taskData, btnEl) {
+            if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
+            if (isRecording) { stopRecording(); btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    processAudio(blob, taskData, btnEl);
+                };
+                mediaRecorder.start(); isRecording = true;
+                btnEl.classList.add('recording-pulse'); btnEl.innerHTML = `<i class="ph-fill ph-stop text-3xl"></i>`;
+                const st = document.getElementById('popup-status');
+                if(st) { st.innerHTML = `<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`; st.className = 'text-red-500 w-full text-center'; }
+            } catch (err) { alert("Mic access error."); }
+        }
+
+        function stopRecording() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); isRecording = false; } }
+
+        async function processAudio(blob, taskData, btnEl) {
+            const reader = new FileReader(); reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                const base64 = reader.result.split(',')[1];
+                const refs = taskData.reference.split('|');
+                let best = 0;
+                for(const r of refs) {
+                    try {
+                        const res = await fetch(CLOVA_API_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioBase64: base64, languageCode: "Kor", referenceText: r }) });
+                        if (res.ok) { const json = await res.json(); const s = json.assessment?.pronunciation_score || 0; if(s > best) best = s; }
+                    } catch (e) {}
+                }
+                if(best === 0) best = 100; 
+                evaluate(best, taskData, btnEl, document.getElementById('popup-status'));
+            };
+        }
+
+        function evaluate(score, taskData, btnEl, status) {
+            const state = pageStates[currentIndex];
+            state.attemptsCount++;
+            const att = state.attemptsCount;
+            const threshold = taskData.threshold || 80;
+            const isRepeat = taskData.type === 'repeat';
+            const isQuiz = taskData.type === 'speaking-quiz';
+            
+            btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
+            btnEl.classList.remove('recording-pulse');
+            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
+            const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
+
+            // --- 1강 표준 로직 (repeat) ---
+            if (isRepeat) {
+                if (att === 1) {
+                    status.innerHTML = (score >= threshold ? "Très bien, essayons encore une fois." : "On y est presque ! Essayons encore une fois.") + scoreStr;
+                    status.className = baseClasses + (score >= threshold ? 'text-green-500' : 'text-yellow-600');
+                    const bPlay = document.getElementById('btn-popup-play');
+                    if (bPlay) setTimeout(() => bPlay.click(), 800);
+                } else {
+                    state.isPassed = true;
+                    if (score >= threshold) {
+                        status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    } else {
+                        status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
+                        status.className = baseClasses + 'text-gray-500';
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    }
+                    finishTask(taskData, btnEl);
+                }
+            } 
+            // --- 12페이지 로직 (Speaking Quiz) ---
+            else if (isQuiz) {
+                if (score >= threshold) {
+                    state.isPassed = true;
+                    status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
+                    status.className = baseClasses + 'text-green-500';
+                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    finishTask(taskData, btnEl);
+                } else if (att < 3) {
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
+                    status.className = baseClasses + 'text-yellow-600';
+                } else {
+                    state.isPassed = true;
+                    status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
+                    status.className = baseClasses + 'text-gray-500';
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    finishTask(taskData, btnEl);
+                }
+            }
+        }
+
+        function finishTask(taskData, btnEl) {
+            btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
+            const bNextPop = document.getElementById('btn-popup-next');
+            if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        document.getElementById('btn-next').addEventListener('click', async () => { 
+            if(currentIndex === 0) await initSynths(); 
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
+            currentIndex++; loadPage(currentIndex); 
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => { 
+            if (currentIndex > 0) { 
+                if(transitionSynth) transitionSynth.triggerAttackRelease('C5', '0.05s');
+                currentIndex--; loadPage(currentIndex); 
+            } 
+        });
+
+        document.getElementById('btn-close-popup').onclick = () => document.getElementById('popup-overlay').classList.add('hidden');
+        document.getElementById('btn-popup-toggle').onclick = () => { const d = lessonData[currentIndex]; if(d.popup) showPopupSequence(d); };
+
+        loadPage(0);
+    </script>
+</body>
+</html>
