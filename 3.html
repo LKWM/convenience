@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mission débutant - Aller au convenience store - Leçon 3</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tone.js for Sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        /* 1. Reset & Layout Fundamentals */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #FEFCE8; 
+            touch-action: none;
+            font-family: 'Inter', 'Noto Sans', sans-serif;
+            color: #1F2937;
+        }
+
+        /* 2. Responsive Application Container */
+        #app-container {
+            width: 100vw;
+            height: 100dvh; 
+            padding: clamp(10px, 3vh, 2rem);
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3. The Main Card */
+        .lesson-card {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            background: white;
+            border-radius: 1.5rem;
+            border: 2px solid #FEF08A;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 4. Perfect Vertical Centering Mechanics for Content */
+        #content-area {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;    
+            padding: clamp(1.5rem, 4vw, 3rem); 
+            gap: clamp(1.5rem, 4vh, 2.5rem);
+            overflow: hidden;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* 5. Fluid Typography & Icons */
+        .text-title { font-size: clamp(1.5rem, 5vw, 2.5rem); line-height: 1.2; font-weight: 800; }
+        .text-body { font-size: clamp(1rem, 3vw, 1.25rem); line-height: 1.5; color: #374151; }
+        .text-icon { font-size: clamp(3.5rem, 10vw, 5rem); }
+
+        /* 6. Vocab & Answer Card (Chunky Button Style) */
+        .vocab-box {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1rem 2.5rem;
+            border: 3px solid #FEF08A;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            width: fit-content;
+            text-align: center;
+            box-shadow: 0 6px 0px 0px #FEF08A;
+            margin-bottom: 6px;
+        }
+        .vocab-box:hover { transform: translateY(-2px); box-shadow: 0 8px 0px 0px #FEF08A; background: #FFFBEB; }
+        .vocab-box:active { transform: translateY(4px); box-shadow: 0 2px 0px 0px #FEF08A; }
+
+        /* 7. Animations & Utilities */
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .animate-pop-in { animation: popIn 0.3s ease-out forwards; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+
+        .recording-pulse { animation: pulse-red 1.5s infinite; background-color: #EF4444 !important; color: white !important; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        .audio-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 100%; }
+        .audio-wave span { display: block; width: 4px; background-color: #22C55E; border-radius: 2px; animation: wave 1s infinite ease-in-out; }
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .audio-wave span:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes wave { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+        #popup-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        
+        .control-btn {
+            padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: clamp(0.875rem, 2vw, 1rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="lesson-view" class="lesson-card">
+            <div id="content-area"></div>
+
+            <!-- Bottom Control Area -->
+            <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
+                <div id="progress-container" class="hidden w-full flex-col gap-1">
+                    <div class="flex justify-end w-full leading-none">
+                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/12</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1">
+                        <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center w-full">
+                    <div class="flex items-center gap-2">
+                        <button id="btn-prev" class="invisible control-btn bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="ph ph-arrow-left mr-1"></i> <span class="hidden sm:inline">Précédent</span>
+                        </button>
+                        <button id="btn-popup-toggle" class="invisible control-btn bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                            <i class="ph ph-chat-centered-text mr-1"></i> <span class="hidden sm:inline">Exercice</span>
+                        </button>
+                    </div>
+                    <button id="btn-next" class="control-btn bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        <span id="btn-next-text">Commencer</span> <i id="btn-next-icon" class="ph ph-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
+            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+                <!-- Popup content will be injected here -->
+                <div id="popup-content" class="w-full flex flex-col items-center justify-center gap-5"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lessonData = [
+            { id: 1, type: 'intro', subtitle: "Mission débutant - Aller au convenience store", title: "Leçon 3. Je cherche du lait à la banane !", buttonText: "Commencer" },
+            { id: 2, type: 'text-audio', text: "Bonjour ! C'est déjà le troisième chapitre du programme. Dans ce chapitre, nous allons apprendre comment poser des questions et chercher un article lorsque vous ne trouvez pas ce que vous voulez dans un « 편의점 ».", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775551166/3-1_szxhjb.mp3" },
+            { id: 3, type: 'text-audio-popup', text: "Si vous cherchez quelque chose, le caissier peut vous demander comme ça.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775564012/3-2_wwhfz4.mp3", popup: { type: 'audio-only', krText: "찾으시는 거 있으세요?", frText: "Cherchez-vous quelque chose ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3" } },
+            { id: 4, type: 'text-audio-popup', text: "Ces jours-ci, il est très à la mode parmi les touristes de boire du lait à la banane dans les « 편의점 » coréens. Demandez au caissier s'il y a du lait à la banane !", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775565302/3-3_aocxht.mp3", popup: { type: 'repeat', krText: "바나나 우유 있어요?", frText: "Avez-vous du lait à la banane ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775585967/S3-2_tilbcv.mp3", reference: "바나나 우유 있어요", threshold: 80 } },
+            { id: 5, type: 'text-audio', vocab: { kr: "…(이/가) 있어요?", fr: "Y a-t-il / Avez-vous ...?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586073/%E1%84%8B%E1%85%B5%E1%86%BB%E1%84%8B%E1%85%A5%E1%84%8B%E1%85%AD_lrhfgu.mp3" }, text: "Très bien ! « 있어요 » est un adjectif qui interroge sur l'existence d'une chose, et dans un magasin, c'est l'expression utilisée pour demander s'il y a du stock pour cet article. Grammaticalement, il faudrait ajouter la particule « 이 » ou « 가 », mais dans une question courte et informelle, on peut omettre la particule.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775564062/3-4_zeu4hf.mp3" },
+            { id: 6, type: 'text-audio-popup', text: "Puisque vous avez posé la question, le caissier va vous répondre. Écoutez bien.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775566344/3-5_nvlczt.mp3", popup: { type: 'audio-only', krText: "캔커피 옆에 있어요.", frText: "Ils sont à côté du café en canette.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586036/S3-3_u1lynz.mp3" } },
+            { id: 7, type: 'text-audio', vocab: { kr: "옆에", fr: "à côté", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586078/%E1%84%8B%E1%85%A7%E1%87%81%E1%84%8B%E1%85%A6_qwo0bn.mp3" }, text: "Pour indiquer l'emplacement d'un article, on utilise très souvent les objets qui se trouvent autour. L'expression « 옆에 » signifie « à côté », et c'est un mot que l'on entend très souvent dans un « 편의점 », où il y a beaucoup d'articles dans un espace restreint.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775566340/3-6_zwr5k7.mp3" },
+            { id: 8, type: 'text-audio-popup', text: "Cette fois-ci, imaginez que vous voulez acheter deux articles, mais qu'il n'y en a qu'un seul en rayon. Comment poseriez-vous la question ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775566359/3-7_hyzarc.mp3", popup: { type: 'repeat', krText: "이거 더 있어요?", frText: "Vous en avez d'autres ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586041/S3-4_hgosnc.mp3", reference: "이거 더 있어요", threshold: 80 } },
+            { id: 9, type: 'text-audio', vocab: { kr: "더", fr: "plus, encore", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586082/%E1%84%83%E1%85%A5_obcynr.mp3" }, text: "Très bien ! En utilisant l'adverbe « 더 », vous pouvez facilement demander s'il y a d'autres exemplaires du même article.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775567728/3-8_tembtw.mp3" },
+            { id: 10, type: 'text-audio-popup', text: "Écoutez la réponse du caissier.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775585839/3-9_dmf8tt.wav", popup: { type: 'audio-only', krText: "아니요, 한 개 밖에 없어요.", frText: "Non, il n'y a qu'un seul.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586045/S3-5_jkodmq.mp3" } },
+            { id: 11, type: 'text-audio', vocab: { kr: "밖에", fr: "hors", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586233/%E1%84%87%E1%85%A1%E1%86%A9%E1%84%8B%E1%85%A6_wcbwgw.mp3" }, text: "Lors de la leçon précédente, nous avons appris que « 없어요 » est une phrase négative qui signifie « je n'en ai pas ». C'est le même verbe, mais si l'on utilise la particule « 밖에 », cela signifie qu'il n'y a qu'une quantité limitée et rien de plus. C'est une règle de grammaire que l'on apprend généralement vers le niveau A2. Si la grammaire vous semble encore difficile, concentrez-vous d'abord sur le « 네 » et le « 아니요 » lorsque vous écoutez la réponse.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775585846/3-10_imrk28.mp3" },
+            { id: 12, type: 'inline-speaking-quiz', text: "Pour finir, pensez à un article que vous aimeriez acheter dans un « 편의점 », et demandez au caissier si cet article est disponible.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775568695/3-11_mz7kd0.mp3" },
+            { id: 13, type: 'outro', text: "Génial ! Vous n'aurez désormais plus aucun problème pour trouver ce que vous cherchez dans un « 편의점 ». Répétez les expressions apprises aujourd'hui dans la section « 100% Oral », et écoutez les réponses du caissier plusieurs fois pour vous habituer aux conversations en coréen. On se retrouve dans la prochaine leçon !", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586383/3-12_zwntc7.mp3" }
+        ];
+
+        let currentIndex = 0;
+        let currentAudio = null;
+        let popupAudio = null;
+        let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+        let pageStates = lessonData.map(() => ({ isPassed: false, attemptsCount: 0, lastFeedbackHtml: "" }));
+        let mediaRecorder, audioChunks = [], isRecording = false, inlineRecTimeout;
+
+        const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
+        const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+        
+        const GEMINI_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/Geminichat';
+        const GEMINI_SYSTEM_INSTRUCTION = "유저는 한국어를 배우는 A1 수준 학생으로 “… 있어요?” 구조를 활용해 편의점에 원하는 물건이 있는지 묻는다. 응답은 유저의 답을 그대로 전사하는 <Transcription>, 유저의 응답을 상황의 적절성 (편의점), 어휘의 정확도, 문법, 맞춤법을 기준으로 점수/20 형태로 평가하는 <Score>, 그리고 프랑스어로 감점 요인을 설명하는 <explication>란으로 구분한다. Explication은 20점이 아닌 경우에만 작성하며 2문장 이내로 매우 짧고 간결하게 설명한다.";
+
+        async function initSynths() {
+            if(!correctSound) {
+                await Tone.start();
+                correctSound = new Tone.Synth().toDestination();
+                completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                transitionSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                errorSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.4 } }).toDestination();
+            }
+        }
+
+        // 윈도우, 탭 이동, 강제 종료시 오디오 및 녹음 전체 중지 함수
+        function stopAllMedia() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if (popupAudio) {
+                popupAudio.pause();
+                popupAudio.currentTime = 0;
+            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+            clearTimeout(inlineRecTimeout);
+        }
+
+        function updateProgress() {
+            const container = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            const text = document.getElementById('progress-text');
+            if (currentIndex === 0) container.classList.add('hidden');
+            else {
+                container.classList.remove('hidden'); container.classList.add('flex');
+                const total = lessonData.length - 1; 
+                bar.style.width = `${(currentIndex / total) * 100}%`;
+                text.innerText = `${currentIndex}/${total}`;
+            }
+        }
+
+        function loadPage(index) {
+            stopAllMedia();
+            
+            document.getElementById('popup-overlay').classList.add('hidden');
+            document.getElementById('btn-popup-toggle').classList.add('invisible');
+            
+            const nextBtn = document.getElementById('btn-next');
+            nextBtn.disabled = !pageStates[index].isPassed; 
+            
+            if(index === 0) document.getElementById('btn-prev').classList.add('invisible'); 
+            else document.getElementById('btn-prev').classList.remove('invisible');
+
+            const data = lessonData[index];
+            updateProgress();
+
+            const area = document.getElementById('content-area');
+            
+            if (data.type === 'intro') {
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-icon"></i></div>
+                    <div class="flex flex-col items-center justify-center gap-2 w-full text-center">
+                        <h3 class="text-[clamp(0.75rem,2vw,1rem)] text-gray-500 font-bold uppercase m-0 tracking-wide">${data.subtitle}</h3>
+                        <h1 class="text-title text-green-600 animate-fade-in delay-100 m-0 leading-tight">${data.title}</h1>
+                    </div>
+                `;
+                document.getElementById('btn-next-text').innerText = data.buttonText || "Commencer";
+                nextBtn.disabled = false;
+                
+            } else if (data.type === 'outro') {
+                document.getElementById('controls-area').classList.add('hidden');
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-pop-in"><i class="ph-fill ph-confetti text-icon"></i></div>
+                    <div class="text-body max-w-2xl text-center animate-fade-in">${data.text}</div>
+                `;
+                if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+                playMainAudio(data);
+                
+            } else if (data.type === 'inline-speaking-quiz') {
+                document.getElementById('btn-next-text').innerText = "Suivant";
+                document.getElementById('controls-area').classList.remove('hidden');
+                const state = pageStates[index];
+                
+                const isFirstAttempt = state.attemptsCount === 0 && !state.isPassed;
+                const micDisabled = true; 
+                const statusText = state.isPassed ? 'Très bien ! Passez à la suite.' : 
+                                   (isFirstAttempt ? 'Écoutez d\'abord l\'audio...' : 'Appuyez sur le micro pour parler (max 8s)');
+                
+                area.innerHTML = `
+                    <div class="text-body max-w-2xl text-center text-gray-800">${data.text}</div>
+                    
+                    <div id="inline-quiz-container" class="w-full flex flex-col items-center gap-4 mt-8 z-20 relative">
+                        <div class="flex items-center justify-center gap-5 w-full h-16">
+                            <button id="btn-inline-record" class="w-16 h-16 ${state.isPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="ph-fill ph-microphone text-3xl"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-col items-center justify-center min-h-[3rem] w-full gap-2">
+                            <p id="inline-status" class="text-sm md:text-base font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full m-0">
+                                ${statusText}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                const bRec = document.getElementById('btn-inline-record');
+                if(bRec) bRec.onclick = () => toggleInlineRecording(data, bRec);
+
+                if (!isFirstAttempt && !state.isPassed) {
+                    if(bRec) bRec.disabled = false;
+                }
+
+                playMainAudio(data, () => {
+                    if (isFirstAttempt && !state.isPassed) {
+                        if(bRec) bRec.disabled = false;
+                        const st = document.getElementById('inline-status');
+                        if(st) st.innerText = 'Appuyez sur le micro pour parler (max 8s)';
+                    }
+                });
+
+            } else {
+                document.getElementById('btn-next-text').innerText = "Suivant";
+                document.getElementById('controls-area').classList.remove('hidden');
+                
+                let vocabHtml = "";
+                if(data.vocab) {
+                    vocabHtml = `<div class="vocab-box animate-fade-in" onclick="new Audio('${data.vocab.audio}').play();"><div class="font-bold text-2xl text-gray-800">${data.vocab.kr}</div><div class="text-sm font-semibold text-gray-500 mt-1">${data.vocab.fr}</div></div>`;
+                }
+                
+                area.innerHTML = `${vocabHtml}<div class="text-body max-w-2xl text-center animate-fade-in text-gray-800">${data.text}</div>`;
+                
+                if (!data.type.includes('popup')) { 
+                    nextBtn.disabled = false; 
+                    pageStates[index].isPassed = true; 
+                } else if (pageStates[index].isPassed) {
+                    document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                }
+                
+                playMainAudio(data);
+            }
+        }
+
+        function playMainAudio(data, onEndCallback = null) {
+            if(!data.audio) { if(onEndCallback) onEndCallback(); return; }
+            currentAudio = new Audio(data.audio);
+            currentAudio.play().catch(() => {});
+            currentAudio.onended = () => {
+                if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
+                if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                if (onEndCallback) onEndCallback();
+            };
+        }
+
+        function showPopupSequence(lessonObj) {
+            const overlay = document.getElementById('popup-overlay');
+            overlay.classList.remove('hidden');
+            const state = pageStates[currentIndex];
+            renderTask(lessonObj.popup || lessonObj, state); 
+        }
+
+        function renderTask(taskData, state) {
+            const isAudioOnly = taskData.type === 'audio-only';
+            const isRepeat = taskData.type === 'repeat';
+            const content = document.getElementById('popup-content');
+            let contentHtml = '';
+
+            if (isAudioOnly) {
+                contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                    <div class="text-yellow-500 m-0"><i class="ph-fill ph-speaker-high text-6xl"></i></div>
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        <h2 class="text-2xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        ${taskData.frText ? `<p class="text-base text-gray-500 m-0">${taskData.frText}</p>` : ''}
+                    </div>
+                    <button id="btn-popup-play" class="px-6 py-3 bg-green-500 text-white rounded-full font-bold shadow-md hover:bg-green-600 w-full max-w-[200px] flex items-center justify-center"><i class="ph-fill ph-play mr-2 text-xl"></i> Écouter</button>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            } else if (isRepeat) {
+                contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
+                    </div>
+                    <div class="flex items-center justify-center gap-5 w-full h-16">
+                        <button id="btn-popup-play" class="w-14 h-14 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md hover:bg-yellow-500 transition-colors"><i class="ph-fill ph-play text-2xl"></i></button>
+                        <button id="btn-popup-record" class="w-16 h-16 ${state.isPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-3xl"></i></button>
+                    </div>
+                    <div class="flex items-center justify-center min-h-[3rem] w-full">
+                        <p id="popup-status" class="text-sm font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full">${state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler'}</p>
+                    </div>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            }
+
+            content.innerHTML = contentHtml;
+            const bPlay = document.getElementById('btn-popup-play');
+            const bRecord = document.getElementById('btn-popup-record');
+            const bNextPop = document.getElementById('btn-popup-next');
+            const bClose = document.getElementById('btn-close-popup');
+
+            if(bNextPop) bNextPop.onclick = () => { 
+                state.isPassed = true;
+                document.getElementById('popup-overlay').classList.add('hidden'); 
+                const nextBtn = document.getElementById('btn-next');
+                nextBtn.disabled = false;
+                nextBtn.click(); 
+            };
+            
+            if(bClose) bClose.onclick = () => {
+                document.getElementById('popup-overlay').classList.add('hidden');
+                if (state.isPassed) {
+                    document.getElementById('btn-next').disabled = false;
+                }
+            };
+            
+            if(bPlay) {
+                bPlay.onclick = () => {
+                    if (isRecording) return;
+                    if(bRecord && !state.isPassed) { bRecord.disabled = true; bRecord.classList.add('opacity-50', 'pointer-events-none'); }
+                    if(popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+                    popupAudio = new Audio(taskData.audio); popupAudio.play();
+                    const orig = bPlay.innerHTML; 
+                    bPlay.innerHTML = isAudioOnly ? `<div class="audio-wave"><span></span><span></span><span></span><span></span></div>` : `<i class="ph-fill ph-speaker-high"></i>`;
+                    
+                    popupAudio.onended = () => {
+                        bPlay.innerHTML = orig; 
+                        if(bRecord && !state.isPassed) { bRecord.disabled = false; bRecord.classList.remove('opacity-50', 'pointer-events-none'); }
+                        if (isAudioOnly) {
+                            state.isPassed = true; 
+                            document.getElementById('btn-next').disabled = false;
+                            const st = document.getElementById('popup-status'); 
+                            if(st) { st.innerHTML = `Très bien ! Passez à la suite.`; st.className = 'text-sm md:text-base font-bold text-green-500 text-center w-full'; }
+                        }
+                    };
+                };
+                if (!state.isPassed) setTimeout(() => bPlay.click(), 300);
+            }
+            if(bRecord) bRecord.onclick = () => toggleRecording(taskData, bRecord);
+        }
+
+        // --- Standard Clova Recording Logic ---
+        async function toggleRecording(taskData, btnEl) {
+            if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
+            if (isRecording) { stopRecording(); btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    processAudio(blob, taskData, btnEl);
+                };
+                mediaRecorder.start(); isRecording = true;
+                btnEl.classList.add('recording-pulse'); btnEl.innerHTML = `<i class="ph-fill ph-stop text-3xl"></i>`;
+                const st = document.getElementById('popup-status');
+                if(st) { st.innerHTML = `<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`; st.className = 'text-red-500 w-full text-center'; }
+            } catch (err) { alert("Mic access error."); }
+        }
+
+        function stopRecording() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); isRecording = false; } }
+
+        async function processAudio(blob, taskData, btnEl) {
+            const reader = new FileReader(); reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                const base64 = reader.result.split(',')[1];
+                const refs = taskData.reference.split('|');
+                let best = 0;
+                for(const r of refs) {
+                    try {
+                        const res = await fetch(CLOVA_API_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioBase64: base64, languageCode: "Kor", referenceText: r }) });
+                        if (res.ok) { const json = await res.json(); const s = json.assessment?.pronunciation_score || 0; if(s > best) best = s; }
+                    } catch (e) {}
+                }
+                if(best === 0) best = 100; // Fallback
+                evaluate(best, taskData, btnEl, document.getElementById('popup-status'));
+            };
+        }
+
+        function evaluate(score, taskData, btnEl, status) {
+            const state = pageStates[currentIndex];
+            state.attemptsCount++;
+            const att = state.attemptsCount;
+            const threshold = taskData.threshold || 80;
+            
+            btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
+            btnEl.classList.remove('recording-pulse');
+            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
+            const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
+
+            if (att === 1) {
+                status.innerHTML = (score >= threshold ? "Très bien, essayons encore une fois." : "On y est presque ! Essayons encore une fois.") + scoreStr;
+                status.className = baseClasses + (score >= threshold ? 'text-green-500' : 'text-yellow-600');
+                const bPlay = document.getElementById('btn-popup-play');
+                if (bPlay) setTimeout(() => bPlay.click(), 800);
+            } else {
+                state.isPassed = true;
+                if (score >= threshold) {
+                    status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
+                    status.className = baseClasses + 'text-green-500';
+                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                } else {
+                    status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
+                    status.className = baseClasses + 'text-gray-500';
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                }
+                finishPopupTask(btnEl);
+            }
+        }
+
+        function finishPopupTask(btnEl) {
+            btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        // --- Inline Speaking Quiz (Gemini API) Logic ---
+        async function toggleInlineRecording(taskData, btnEl) {
+            if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
+            if (isRecording) {
+                clearTimeout(inlineRecTimeout);
+                stopInlineRecording(taskData, btnEl); 
+                return; 
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    processGeminiAudio(blob, btnEl);
+                };
+                mediaRecorder.start(); 
+                isRecording = true;
+                
+                btnEl.classList.add('recording-pulse'); 
+                btnEl.innerHTML = `<i class="ph-fill ph-stop text-3xl"></i>`;
+                
+                const st = document.getElementById('inline-status');
+                if(st) { 
+                    st.innerHTML = `<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`; 
+                    st.className = 'text-red-500 w-full text-center m-0'; 
+                }
+
+                inlineRecTimeout = setTimeout(() => {
+                    if(isRecording) stopInlineRecording(taskData, btnEl);
+                }, 8000);
+
+            } catch (err) { alert("Mic access error."); }
+        }
+
+        function stopInlineRecording(taskData, btnEl) {
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+                if(btnEl) btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+                btnEl.classList.remove('recording-pulse');
+            }
+        }
+
+        async function processGeminiAudio(blob, btnEl) {
+            const status = document.getElementById('inline-status');
+            
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result.split(',')[1];
+                    const mimeType = blob.type ? blob.type.split(';')[0] : 'audio/webm';
+
+                    try {
+                        const res = await fetch(GEMINI_API_FUNCTION_URL, {
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [
+                                    {
+                                        role: "user",
+                                        parts: [
+                                            {
+                                                inlineData: {
+                                                    mimeType: mimeType,
+                                                    data: base64data
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
+                                model: "gemini-2.5-flash"
+                            })
+                        });
+                        
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            throw new Error(`API Request Failed: ${errorText}`);
+                        }
+
+                        const result = await res.json();
+                        const rawText = result.text || ""; 
+                        
+                        showRawGeminiFeedbackPopup(rawText, btnEl, status);
+
+                    } catch (apiError) {
+                        console.error("Gemini API Error", apiError);
+                        btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
+                        btnEl.classList.remove('recording-pulse');
+                        btnEl.disabled = false;
+                        
+                        let errorMessage = "Erreur de connexion. Veuillez réessayer.";
+                        if(apiError.message.includes('503') || apiError.message.includes('UNAVAILABLE') || apiError.message.includes('high demand')) {
+                            errorMessage = "Erreur 503 : Le serveur est actuellement surchargé.";
+                        }
+                        
+                        showRawGeminiFeedbackPopup(errorMessage, btnEl, status, true);
+                    }
+                };
+            } catch (err) {
+                console.warn("Processing error", err);
+                showRawGeminiFeedbackPopup("Erreur de traitement", btnEl, status, true);
+            }
+        }
+
+        function showRawGeminiFeedbackPopup(rawText, btnEl, status, isError = false) {
+            const state = pageStates[currentIndex];
+            const overlay = document.getElementById('popup-overlay');
+            const content = document.getElementById('popup-content');
+            
+            let isPerfect = false;
+            if (!isError) {
+                isPerfect = rawText.includes("20/20") || rawText.includes("20 / 20");
+            }
+            
+            state.attemptsCount++;
+            const att = state.attemptsCount;
+            
+            btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
+            btnEl.classList.remove('recording-pulse');
+
+            const safeRawText = rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            let nextActionHtml = "";
+            if (isError) {
+                nextActionHtml = `<button id="btn-feedback-retry" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-4">Fermer</button>`;
+            } else if (isPerfect || att >= 2) {
+                nextActionHtml = `<button id="btn-feedback-continue" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-4">Continuer <i class="ph ph-arrow-right ml-2"></i></button>`;
+            } else {
+                nextActionHtml = `
+                    <button id="btn-feedback-retry" class="px-6 py-3 bg-yellow-500 text-white rounded-full font-bold shadow-md hover:bg-yellow-600 w-full max-w-[200px] mt-4"><i class="ph ph-arrow-counter-clockwise mr-2"></i> Réessayer</button>
+                    <button id="btn-feedback-continue" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-2">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            }
+
+            overlay.classList.remove('hidden');
+            
+            content.innerHTML = `
+                <div class="flex flex-col items-center gap-2 w-full text-center">
+                    <div class="w-full text-left p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto max-h-[60vh] whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+${safeRawText}
+                    </div>
+                    ${nextActionHtml}
+                </div>
+            `;
+
+            const closeAction = (forceContinue = false) => {
+                overlay.classList.add('hidden');
+                let baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors m-0 ';
+                
+                if (isError) {
+                    status.innerHTML = "Une erreur s'est produite. Veuillez réessayer.";
+                    status.className = baseClasses + 'text-red-500';
+                    btnEl.disabled = false;
+                    state.attemptsCount--; 
+                    return;
+                }
+
+                if (isPerfect || forceContinue || att >= 2) {
+                    state.isPassed = true;
+                    status.innerHTML = isPerfect ? `Très bien ! Passez à la suite.` : `Bien essayé ! Passez à la suite.`;
+                    status.className = baseClasses + (isPerfect ? 'text-green-500' : 'text-gray-500');
+                    if (isPerfect && successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    else if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    finishInlineTask(btnEl);
+                } else {
+                    status.innerHTML = "On y est presque ! Essayons encore une fois.";
+                    status.className = baseClasses + 'text-yellow-600';
+                    btnEl.disabled = false;
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                }
+            };
+
+            const btnRetry = document.getElementById('btn-feedback-retry');
+            const btnContinue = document.getElementById('btn-feedback-continue');
+            
+            if(btnRetry) btnRetry.onclick = () => closeAction(false);
+            if(btnContinue) btnContinue.onclick = () => {
+                if (isError) closeAction(false); 
+                else closeAction(true); 
+            };
+        }
+
+        function finishInlineTask(btnEl) {
+            btnEl.disabled = true; 
+            btnEl.classList.replace('bg-green-500', 'bg-gray-300'); 
+            btnEl.classList.remove('hover:bg-green-600', 'hover:scale-105');
+            btnEl.classList.add('pointer-events-none'); 
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        // 글로벌 이벤트 리스너: 창 전환, 종료 시 미디어 정지
+        window.addEventListener('beforeunload', stopAllMedia);
+        window.addEventListener('pagehide', stopAllMedia);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopAllMedia();
+        });
+
+        // --- Controls ---
+        document.getElementById('btn-next').addEventListener('click', async () => { 
+            if(currentIndex === 0) await initSynths(); 
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
+            currentIndex++; loadPage(currentIndex); 
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => { 
+            if (currentIndex > 0) { 
+                if(transitionSynth) transitionSynth.triggerAttackRelease('C5', '0.05s');
+                currentIndex--; loadPage(currentIndex); 
+            } 
+        });
+
+        loadPage(0);
+    </script>
+</body>
+</html>
