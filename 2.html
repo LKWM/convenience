@@ -214,6 +214,22 @@
             }
         }
 
+        // 윈도우, 탭 이동, 강제 종료시 오디오 및 녹음 전체 중지 함수
+        function stopAllMedia() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if (popupAudio) {
+                popupAudio.pause();
+                popupAudio.currentTime = 0;
+            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+        }
+
         function updateProgress() {
             const container = document.getElementById('progress-container');
             const bar = document.getElementById('progress-bar');
@@ -228,8 +244,8 @@
         }
 
         function loadPage(index) {
-            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+            stopAllMedia(); // 페이지 이동 시 오디오 초기화 적용
+            
             document.getElementById('popup-overlay').classList.add('hidden');
             document.getElementById('btn-popup-toggle').classList.add('invisible');
             
@@ -261,6 +277,9 @@
                 `;
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
                 playMainAudio(data);
+                
+                // 완료 페이지 도달 시 부모 창에 완료 메시지 전송
+                window.parent.postMessage('lesson_complete', '*');
             } else {
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 document.getElementById('controls-area').classList.remove('hidden');
@@ -274,19 +293,26 @@
                     nextBtn.disabled = false; 
                     pageStates[index].isPassed = true; 
                 } else if (pageStates[index].isPassed) {
+                    // 이전에 이미 완료한 팝업 페이지로 다시 왔을 경우 Exercice 버튼 즉시 활성화
                     document.getElementById('btn-popup-toggle').classList.remove('invisible');
                 }
                 playMainAudio(data);
             }
         }
 
-        function playMainAudio(data) {
-            if(!data.audio) return;
+        function playMainAudio(data, onEndCallback = null) {
+            if(!data.audio || data.audio === 'null') { 
+                if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
+                if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                if (onEndCallback) onEndCallback(); 
+                return; 
+            }
             currentAudio = new Audio(data.audio);
             currentAudio.play().catch(() => {});
             currentAudio.onended = () => {
                 if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
                 if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                if (onEndCallback) onEndCallback();
             };
         }
 
@@ -318,7 +344,6 @@
                     <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 ${state.isPassed ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed ? '' : 'disabled'}>Continuer <i class="ph ph-arrow-right ml-2"></i></button>
                 `;
             } else if (isSpeakingQuiz) {
-                // 12페이지 팝업: 타이틀/서브타이틀 삭제. 오디오 카드 2개 + 마이크 + 상태창만 배치.
                 let optionsHtml = `<div class="w-full flex flex-col items-center gap-2">` + taskData.options.map(opt => `
                     <div class="vocab-box !py-2 !px-8 !text-sm !mb-0 !shadow-[0_4px_0_0_#FEF08A] !border-2" onclick="new Audio('${opt.audio}').play();">
                         <div class="font-bold text-gray-800">${opt.kr}</div>
@@ -358,11 +383,13 @@
             const bNextPop = document.getElementById('btn-popup-next');
 
             if(bNextPop) bNextPop.onclick = () => { 
+                state.isPassed = true; // Continuer 클릭 시 통과 상태 명시적 저장
                 document.getElementById('popup-overlay').classList.add('hidden'); 
                 const nextBtn = document.getElementById('btn-next');
                 nextBtn.disabled = false;
                 nextBtn.click(); 
             };
+            
             if(bPlay) {
                 bPlay.onclick = () => {
                     if (isRecording) return;
@@ -487,6 +514,21 @@
             document.getElementById('btn-next').disabled = false;
         }
 
+        // 글로벌 이벤트 리스너: 창 전환, 종료 시 미디어 정지
+        window.addEventListener('beforeunload', stopAllMedia);
+        window.addEventListener('pagehide', stopAllMedia);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopAllMedia();
+        });
+
+        // X 버튼 클릭 시에도 완료 상태일 경우 메인 화면의 다음 버튼 활성화 보장
+        document.getElementById('btn-close-popup').onclick = () => {
+            document.getElementById('popup-overlay').classList.add('hidden');
+            if (pageStates[currentIndex].isPassed) {
+                document.getElementById('btn-next').disabled = false;
+            }
+        };
+
         document.getElementById('btn-next').addEventListener('click', async () => { 
             if(currentIndex === 0) await initSynths(); 
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
@@ -500,7 +542,6 @@
             } 
         });
 
-        document.getElementById('btn-close-popup').onclick = () => document.getElementById('popup-overlay').classList.add('hidden');
         document.getElementById('btn-popup-toggle').onclick = () => { const d = lessonData[currentIndex]; if(d.popup) showPopupSequence(d); };
 
         loadPage(0);
