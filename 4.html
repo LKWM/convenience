@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mission débutant - Aller au convenience store - Leçon 4</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tone.js pour les sons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        /* 1. Fondamentaux */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #FEFCE8; 
+            touch-action: none;
+            font-family: 'Inter', 'Noto Sans', sans-serif;
+            color: #1F2937;
+        }
+
+        /* 2. Conteneur principal */
+        #app-container {
+            width: 100vw;
+            height: 100dvh; 
+            padding: clamp(10px, 3vh, 2rem);
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3. Carte principale */
+        .lesson-card {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            background: white;
+            border-radius: 1.5rem;
+            border: 2px solid #FEF08A;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 4. Zone de contenu */
+        #content-area {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;    
+            padding: clamp(1.5rem, 4vw, 3rem); 
+            gap: clamp(1.5rem, 4vh, 2.5rem);
+            overflow: hidden;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* 5. Typographie et icônes fluides */
+        .text-title { font-size: clamp(1.5rem, 5vw, 2.5rem); line-height: 1.2; font-weight: 800; }
+        .text-body { font-size: clamp(1rem, 3vw, 1.25rem); line-height: 1.5; color: #374151; }
+        .text-icon { font-size: clamp(3.5rem, 10vw, 5rem); }
+
+        /* 6. Boîte de vocabulaire */
+        .vocab-box {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1rem 2.5rem;
+            border: 3px solid #FEF08A;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            width: fit-content;
+            text-align: center;
+            box-shadow: 0 6px 0px 0px #FEF08A;
+            margin-bottom: 6px;
+        }
+        .vocab-box:hover { transform: translateY(-2px); box-shadow: 0 8px 0px 0px #FEF08A; background: #FFFBEB; }
+        .vocab-box:active { transform: translateY(4px); box-shadow: 0 2px 0px 0px #FEF08A; }
+
+        /* 7. Animations & Utilitaires */
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .animate-pop-in { animation: popIn 0.3s ease-out forwards; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+
+        .recording-pulse { animation: pulse-red 1.5s infinite; background-color: #EF4444 !important; color: white !important; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        .audio-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 100%; }
+        .audio-wave span { display: block; width: 4px; background-color: #22C55E; border-radius: 2px; animation: wave 1s infinite ease-in-out; }
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .audio-wave span:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes wave { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+        #popup-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        
+        .control-btn {
+            padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: clamp(0.875rem, 2vw, 1rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="lesson-view" class="lesson-card">
+            <div id="content-area"></div>
+
+            <!-- Contrôles du bas -->
+            <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
+                <div id="progress-container" class="hidden w-full flex-col gap-1">
+                    <div class="flex justify-end w-full leading-none">
+                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/11</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1">
+                        <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center w-full">
+                    <div class="flex items-center gap-2">
+                        <button id="btn-prev" class="invisible control-btn bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="ph ph-arrow-left mr-1"></i> <span class="hidden sm:inline">Précédent</span>
+                        </button>
+                        <button id="btn-popup-toggle" class="invisible control-btn bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                            <i class="ph ph-chat-centered-text mr-1"></i> <span class="hidden sm:inline">Exercice</span>
+                        </button>
+                    </div>
+                    <button id="btn-next" class="control-btn bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        <span id="btn-next-text">Commencer</span> <i id="btn-next-icon" class="ph ph-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
+            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+                <!-- Contenu du popup injecté ici -->
+                <div id="popup-content" class="w-full flex flex-col items-center justify-center gap-5"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lessonData = [
+            // Page 1
+            { id: 1, type: 'intro', subtitle: "Mission débutant - Aller au convenience store", title: "Leçon 4. Que peut-on faire d'autre dans un « 편의점 » ?", buttonText: "Commencer" },
+            // Page 2
+            { id: 2, type: 'text-audio', text: "Bonjour et bienvenue dans le dernier chapitre de « Mission débutant - Aller au convenience store» ! Dans ce chapitre, nous allons aller plus loin que le simple achat de nourriture ou de boissons, et nous entraîner à acheter des articles soumis à une limite d'âge ou à recharger une carte de transport.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775763923/4-1_rkq3np.mp3" },
+            // Page 3
+            { id: 3, type: 'text-audio', text: "En Corée, pour acheter de l'alcool ou des cigarettes, il faut avoir passé le 1er janvier de l'année de ses dix-neuf ans. En 2026, les personnes nées en 2006 peuvent en acheter quelle que soit leur date d'anniversaire, mais celles nées en 2007 ne le peuvent pas. Dans un « 편의점 », vous pouvez choisir vous-même des alcools comme la bière, le soju, le vin ou le whisky. Cependant, pour les cigarettes, il faut les demander au caissier pour qu'il aille les chercher derrière le comptoir.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764000/4-2_pxdjjn.mp3" },
+            // Page 4
+            { id: 4, type: 'text-audio-popup', text: "Pour payer de l'alcool ou des cigarettes à la caisse, vous devez présenter une pièce d'identité. Écoutez ce que dit le caissier.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764004/4-3_lzbd7m.mp3", popup: { type: 'audio-only', krText: "신분증 좀 보여 주세요.", frText: "Montrez-moi votre carte d'identité, s'il vous plaît.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764041/4S-1_wr1zn4.mp3" } },
+            // Page 5
+            { id: 5, type: 'text-audio', vocab: { kr: "신분증", fr: "carte d'identité", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775790996/%E1%84%89%E1%85%B5%E1%86%AB%E1%84%87%E1%85%AE%E1%86%AB%E1%84%8C%E1%85%B3%E1%86%BC_fgbsge.mp3" }, text: "Les Coréens peuvent utiliser leur carte d'identité ou leur permis de conduire. Les étrangers doivent présenter leur carte de séjour ou leur passeport.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764008/4-4_frn22c.mp3" },
+            // Page 6
+            { id: 6, type: 'text-audio-popup', text: "Il y a une autre chose que l'on fait souvent, c’est le rechargement de la carte de transport. Si vous habitez en Corée, vous pouvez utiliser une carte de crédit ou un abonnement, mais si vous êtes en voyage ou si vous n'utilisez pas souvent les transports en commun, vous pouvez acheter une carte de transport et la recharger du montant de votre choix. D’abord, demandez un rechargement au caissier.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764013/4-5_nugo85.mp3", popup: { type: 'repeat', krText: "교통 카드 충전도 해 주세요.", frText: "De plus, rechargez la carte de transport, s'il vous plaît.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764045/4S-2_gyraeb.mp3", reference: "교통 카드 충전도 해 주세요", threshold: 80 } },
+            // Page 7
+            { id: 7, type: 'text-audio-popup', vocab: { kr: "교통 카드", fr: "Carte de transport", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775790992/%E1%84%80%E1%85%AD%E1%84%8F%E1%85%A1_dkmw3f.mp3" }, text: "La carte de transport s'appelle « 교통 카드 ». On l'appelle aussi souvent « T money », du nom de la marque la plus utilisée. Maintenant, l'employé va vous demander quel montant vous souhaitez recharger.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764018/4-6_ufxldn.mp3", popup: { type: 'audio-only', krText: "얼마 충전해 드릴까요?", frText: "De combien souhaitez-vous recharger ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3" } },
+            // Page 8
+            { id: 8, type: 'text-audio-popup', text: "Le tarif des transports en commun à Séoul est de 1 550 wons, soit environ 0,9 euro. Répondez au caissier que vous voulez recharger 10 000 wons.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764022/4-7_lziq05.mp3", popup: { type: 'repeat', krText: "만 원이요.", frText: "10,000 wons.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764055/4S-4_ljizxk.mp3", reference: "만 원이요", threshold: 80 } },
+            // Page 9
+            { id: 9, type: 'text-audio', vocab: { kr: "만 원이요.", fr: "10,000 wons.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764055/4S-4_ljizxk.mp3" }, text: "Très bien ! Comme le contexte est déjà clair, il n'est plus nécessaire de répéter le verbe « 충전하다 ». Dans ce cas, on peut simplement ajouter la particule de politesse « 이요 » pour l'utiliser comme une phrase complète.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764027/4-8_pefzm9.mp3" },
+            // Page 10 - Quiz combiné avec popups multiples
+            { id: 10, type: 'text-audio-popup', text: "Maintenant, nous allons répéter les expressions apprises aujourd'hui.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775796616/4-9_yovwnp.mp3", 
+              popups: [
+                  { type: 'repeat', isSpecialQuiz: true, krText: "신분증 좀 보여 주세요.", frText: "Montrez-moi votre carte d'identité, s'il vous plaît.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764041/4S-1_wr1zn4.mp3", reference: "신분증 좀 보여 주세요", threshold: 70 },
+                  { type: 'repeat', isSpecialQuiz: true, krText: "교통 카드 충전도 해 주세요.", frText: "De plus, rechargez la carte de transport, s'il vous plaît.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764045/4S-2_gyraeb.mp3", reference: "교통 카드 충전도 해 주세요", threshold: 70 },
+                  { type: 'repeat', isSpecialQuiz: true, krText: "얼마 충전해 드릴까요?", frText: "De combien souhaitez-vous recharger ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3", reference: "얼마 충전해 드릴까요", threshold: 70 },
+                  { type: 'repeat', isSpecialQuiz: true, krText: "만 원이요.", frText: "10,000 wons.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764055/4S-4_ljizxk.mp3", reference: "만 원이요", threshold: 70 }
+              ]
+            },
+            // Page 11
+            { id: 11, type: 'outro', text: "Parfait ! De l'achat d'alcool ou de cigarettes au rechargement de la carte de transport, vous êtes désormais capable de gérer en coréen tout ce qu'on peut faire dans un « 편의점 » ! Révisez les expressions apprises dans ce programme dans les sections « 100% Oral » et « Jeu de rôle », et devenez un maître des achats au « 편의점 ». Merci pour vos efforts jusqu'ici. On se retrouve dans la leçon d'entraînement !", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764036/4-10_lf5uav.wav" }
+        ];
+
+        let currentIndex = 0;
+        let currentAudio = null;
+        let popupAudio = null;
+        let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+        
+        // État de chaque page et des popups multiples
+        let pageStates = lessonData.map(d => ({ 
+            isPassed: false, 
+            attemptsCount: 0, 
+            currentPopupIndex: 0,
+            popupAttempts: d.popups ? d.popups.map(() => 0) : [],
+            popupPassed: d.popups ? d.popups.map(() => false) : []
+        }));
+        
+        let mediaRecorder, audioChunks = [], isRecording = false;
+
+        const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
+        const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+
+        async function initSynths() {
+            if(!correctSound) {
+                await Tone.start();
+                correctSound = new Tone.Synth().toDestination();
+                completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                transitionSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                errorSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.4 } }).toDestination();
+            }
+        }
+
+        function stopAllMedia() {
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); isRecording = false; }
+        }
+
+        function updateProgress() {
+            const container = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            const text = document.getElementById('progress-text');
+            if (currentIndex === 0) container.classList.add('hidden');
+            else {
+                container.classList.remove('hidden'); container.classList.add('flex');
+                const total = lessonData.length - 1; 
+                bar.style.width = `${(currentIndex / total) * 100}%`;
+                text.innerText = `${currentIndex}/${total}`;
+            }
+        }
+
+        function loadPage(index) {
+            stopAllMedia();
+            
+            document.getElementById('popup-overlay').classList.add('hidden');
+            document.getElementById('btn-popup-toggle').classList.add('invisible');
+            
+            const nextBtn = document.getElementById('btn-next');
+            nextBtn.disabled = !pageStates[index].isPassed; 
+            
+            if(index === 0) document.getElementById('btn-prev').classList.add('invisible'); 
+            else document.getElementById('btn-prev').classList.remove('invisible');
+
+            const data = lessonData[index];
+            updateProgress();
+
+            const area = document.getElementById('content-area');
+            
+            if (data.type === 'intro') {
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-icon"></i></div>
+                    <div class="flex flex-col items-center justify-center gap-2 w-full text-center">
+                        <h3 class="text-[clamp(0.75rem,2vw,1rem)] text-gray-500 font-bold uppercase m-0 tracking-wide">${data.subtitle}</h3>
+                        <h1 class="text-title text-green-600 animate-fade-in delay-100 m-0 leading-tight">${data.title}</h1>
+                    </div>
+                `;
+                document.getElementById('btn-next-text').innerText = data.buttonText || "Commencer";
+                nextBtn.disabled = false;
+                
+            } else if (data.type === 'outro') {
+                document.getElementById('controls-area').classList.add('hidden');
+                area.innerHTML = `
+                    <div class="text-yellow-500 animate-pop-in"><i class="ph-fill ph-confetti text-icon"></i></div>
+                    <div class="text-body max-w-2xl text-center animate-fade-in">${data.text}</div>
+                `;
+                if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+                playMainAudio(data);
+                
+                // 완료 페이지에 도달했을 때 부모 창으로 완료 상태 전송
+                window.parent.postMessage('lesson_complete', '*');
+                
+            } else {
+                document.getElementById('btn-next-text').innerText = "Suivant";
+                document.getElementById('controls-area').classList.remove('hidden');
+                
+                let vocabHtml = "";
+                if(data.vocab) {
+                    vocabHtml = `<div class="vocab-box animate-fade-in" onclick="if('${data.vocab.audio}' !== 'null') new Audio('${data.vocab.audio}').play(); else alert('L\\'audio n\\'est pas fourni.');">
+                        <div class="font-bold text-2xl text-gray-800">${data.vocab.kr}</div>
+                        <div class="text-sm font-semibold text-gray-500 mt-1">${data.vocab.fr}</div>
+                    </div>`;
+                }
+                
+                area.innerHTML = `${vocabHtml}<div class="text-body max-w-2xl text-center animate-fade-in text-gray-800">${data.text}</div>`;
+                
+                if (!data.type.includes('popup')) { 
+                    nextBtn.disabled = false; 
+                    pageStates[index].isPassed = true; 
+                } else if (pageStates[index].isPassed) {
+                    document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                }
+                
+                playMainAudio(data);
+            }
+        }
+
+        function playMainAudio(data, onEndCallback = null) {
+            if(!data.audio || data.audio === 'null') { 
+                if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
+                if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                if (onEndCallback) onEndCallback(); 
+                return; 
+            }
+            currentAudio = new Audio(data.audio);
+            currentAudio.play().catch(() => {});
+            currentAudio.onended = () => {
+                if (data.type.includes('popup') && !pageStates[currentIndex].isPassed) showPopupSequence(data);
+                if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                if (onEndCallback) onEndCallback();
+            };
+        }
+
+        function showPopupSequence(lessonObj) {
+            const overlay = document.getElementById('popup-overlay');
+            overlay.classList.remove('hidden');
+            const state = pageStates[currentIndex];
+            
+            // Si la séquence contient plusieurs popups (ex: Page 10)
+            if (lessonObj.popups && lessonObj.popups.length > 0) {
+                renderTask(lessonObj.popups[state.currentPopupIndex], state, true);
+            } else {
+                renderTask(lessonObj.popup, state, false); 
+            }
+        }
+
+        function renderTask(taskData, state, isMulti) {
+            const isAudioOnly = taskData.type === 'audio-only';
+            const isRepeat = taskData.type === 'repeat';
+            const pIdx = isMulti ? state.currentPopupIndex : 0;
+            const isTaskPassed = isMulti ? state.popupPassed[pIdx] : state.isPassed;
+            
+            const content = document.getElementById('popup-content');
+            let contentHtml = '';
+
+            if (isAudioOnly) {
+                contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                    <div class="text-yellow-500 m-0"><i class="ph-fill ph-speaker-high text-6xl"></i></div>
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        <h2 class="text-2xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        ${taskData.frText ? `<p class="text-base text-gray-500 m-0">${taskData.frText}</p>` : ''}
+                    </div>
+                    <button id="btn-popup-play" class="px-6 py-3 bg-green-500 text-white rounded-full font-bold shadow-md hover:bg-green-600 w-full max-w-[200px] flex items-center justify-center"><i class="ph-fill ph-play mr-2 text-xl"></i> Écouter</button>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            } else if (isRepeat) {
+                contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                    <div class="flex flex-col items-center gap-2 w-full text-center">
+                        ${isMulti ? `<p class="text-sm font-bold text-blue-500 uppercase tracking-widest mb-0">Quiz ${pIdx + 1} / 4</p>` : ''}
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
+                        <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
+                    </div>
+                    <div class="flex items-center justify-center gap-5 w-full h-16">
+                        <button id="btn-popup-play" class="w-14 h-14 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md hover:bg-yellow-500 transition-colors"><i class="ph-fill ph-play text-2xl"></i></button>
+                        <button id="btn-popup-record" class="w-16 h-16 ${isTaskPassed ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isTaskPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-3xl"></i></button>
+                    </div>
+                    <div class="flex items-center justify-center min-h-[3rem] w-full">
+                        <p id="popup-status" class="text-sm font-bold ${isTaskPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full">${isTaskPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler'}</p>
+                    </div>
+                    <button id="btn-popup-next" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
+                `;
+            }
+
+            content.innerHTML = contentHtml;
+            const bPlay = document.getElementById('btn-popup-play');
+            const bRecord = document.getElementById('btn-popup-record');
+            const bNextPop = document.getElementById('btn-popup-next');
+            const bClose = document.getElementById('btn-close-popup');
+
+            if(bNextPop) bNextPop.onclick = () => { 
+                if (isMulti) {
+                    state.popupPassed[pIdx] = true;
+                    if (state.currentPopupIndex < lessonData[currentIndex].popups.length - 1) {
+                        state.currentPopupIndex++;
+                        renderTask(lessonData[currentIndex].popups[state.currentPopupIndex], state, true);
+                    } else {
+                        state.isPassed = true;
+                        document.getElementById('popup-overlay').classList.add('hidden'); 
+                        const nextBtn = document.getElementById('btn-next');
+                        nextBtn.disabled = false;
+                        nextBtn.click(); 
+                    }
+                } else {
+                    state.isPassed = true;
+                    document.getElementById('popup-overlay').classList.add('hidden'); 
+                    const nextBtn = document.getElementById('btn-next');
+                    nextBtn.disabled = false;
+                    nextBtn.click(); 
+                }
+            };
+            
+            if(bClose) bClose.onclick = () => {
+                document.getElementById('popup-overlay').classList.add('hidden');
+                if (state.isPassed) { document.getElementById('btn-next').disabled = false; }
+            };
+            
+            if(bPlay) {
+                bPlay.onclick = () => {
+                    if (isRecording) return;
+                    if(bRecord && !isTaskPassed) { bRecord.disabled = true; bRecord.classList.add('opacity-50', 'pointer-events-none'); }
+                    if(popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+                    popupAudio = new Audio(taskData.audio); popupAudio.play();
+                    const orig = bPlay.innerHTML; 
+                    bPlay.innerHTML = isAudioOnly ? `<div class="audio-wave"><span></span><span></span><span></span><span></span></div>` : `<i class="ph-fill ph-speaker-high"></i>`;
+                    
+                    popupAudio.onended = () => {
+                        bPlay.innerHTML = orig; 
+                        if(bRecord && !isTaskPassed) { bRecord.disabled = false; bRecord.classList.remove('opacity-50', 'pointer-events-none'); }
+                        if (isAudioOnly) {
+                            if(isMulti) state.popupPassed[pIdx] = true; else state.isPassed = true;
+                            document.getElementById('btn-next').disabled = false;
+                            const st = document.getElementById('popup-status'); 
+                            if(st) { st.innerHTML = `Très bien ! Passez à la suite.`; st.className = 'text-sm md:text-base font-bold text-green-500 text-center w-full'; }
+                        }
+                    };
+                };
+                if (!isTaskPassed) setTimeout(() => bPlay.click(), 300);
+            }
+            if(bRecord) bRecord.onclick = () => toggleRecording(taskData, bRecord, isMulti);
+        }
+
+        async function toggleRecording(taskData, btnEl, isMulti) {
+            if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
+            if (isRecording) { stopRecording(); btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    processAudio(blob, taskData, btnEl, isMulti);
+                };
+                mediaRecorder.start(); isRecording = true;
+                btnEl.classList.add('recording-pulse'); btnEl.innerHTML = `<i class="ph-fill ph-stop text-3xl"></i>`;
+                const st = document.getElementById('popup-status');
+                if(st) { st.innerHTML = `<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`; st.className = 'text-red-500 w-full text-center'; }
+            } catch (err) { alert("Mic access error."); }
+        }
+
+        function stopRecording() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); isRecording = false; } }
+
+        async function processAudio(blob, taskData, btnEl, isMulti) {
+            const reader = new FileReader(); reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                const base64 = reader.result.split(',')[1];
+                const refs = taskData.reference.split('|');
+                let best = 0;
+                let recognizedText = "Non disponible";
+                
+                for(const r of refs) {
+                    try {
+                        const res = await fetch(CLOVA_API_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioBase64: base64, languageCode: "Kor", referenceText: r }) });
+                        if (res.ok) { 
+                            const json = await res.json(); 
+                            const s = json.assessment?.pronunciation_score || 0; 
+                            if(s >= best) {
+                                best = s;
+                                recognizedText = json.recognized || json.text || (json.assessment && json.assessment.recognized) || "Non disponible";
+                            }
+                        }
+                    } catch (e) {}
+                }
+                if(best === 0) best = 100; // Fallback sécurité
+                evaluate(best, taskData, btnEl, document.getElementById('popup-status'), isMulti, recognizedText);
+            };
+        }
+
+        function evaluate(score, taskData, btnEl, status, isMulti, recognizedText) {
+            const state = pageStates[currentIndex];
+            const pIdx = isMulti ? state.currentPopupIndex : 0;
+            
+            if (isMulti) state.popupAttempts[pIdx]++;
+            else state.attemptsCount++;
+            
+            const att = isMulti ? state.popupAttempts[pIdx] : state.attemptsCount;
+            const isSpecialQuiz = taskData.isSpecialQuiz || false;
+            const maxAtt = isSpecialQuiz ? 3 : 2;
+            const threshold = isSpecialQuiz ? 70 : (taskData.threshold || 80);
+            
+            btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
+            btnEl.classList.remove('recording-pulse');
+            
+            let transHtml = "";
+            if (isSpecialQuiz) {
+                transHtml = `<br><span class="text-sm text-gray-700 block mt-2 font-medium">Transcription: <span class="font-normal text-gray-500">${recognizedText}</span></span>`;
+            }
+            
+            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
+            const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
+
+            if (score >= threshold) {
+                if(isMulti) state.popupPassed[pIdx] = true; else state.isPassed = true;
+                status.innerHTML = `Très bien ! Passez à la suite.` + transHtml + scoreStr;
+                status.className = baseClasses + 'text-green-500';
+                if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                finishPopupTask(btnEl, isMulti);
+            } else if (att < maxAtt) {
+                status.innerHTML = "On y est presque ! Essayons encore une fois." + transHtml + scoreStr;
+                status.className = baseClasses + 'text-yellow-600';
+                const bPlay = document.getElementById('btn-popup-play');
+                if (bPlay) setTimeout(() => bPlay.click(), 800);
+            } else {
+                if(isMulti) state.popupPassed[pIdx] = true; else state.isPassed = true;
+                status.innerHTML = `Bien essayé ! Passez à la suite.` + transHtml + scoreStr;
+                status.className = baseClasses + 'text-gray-500';
+                if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                finishPopupTask(btnEl, isMulti);
+            }
+        }
+
+        function finishPopupTask(btnEl, isMulti) {
+            btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
+            const state = pageStates[currentIndex];
+            if (!isMulti) document.getElementById('btn-next').disabled = false;
+        }
+
+        // Événements globaux pour arrêter les médias
+        window.addEventListener('beforeunload', stopAllMedia);
+        window.addEventListener('pagehide', stopAllMedia);
+        document.addEventListener('visibilitychange', () => { if (document.hidden) stopAllMedia(); });
+
+        // --- Contrôles de navigation ---
+        document.getElementById('btn-next').addEventListener('click', async () => { 
+            if(currentIndex === 0) await initSynths(); 
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
+            currentIndex++; loadPage(currentIndex); 
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => { 
+            if (currentIndex > 0) { 
+                if(transitionSynth) transitionSynth.triggerAttackRelease('C5', '0.05s');
+                currentIndex--; loadPage(currentIndex); 
+            } 
+        });
+
+        document.getElementById('btn-popup-toggle').onclick = () => { 
+            const d = lessonData[currentIndex]; 
+            if(d.popup || d.popups) showPopupSequence(d); 
+        };
+
+        loadPage(0);
+    </script>
+</body>
+</html>
