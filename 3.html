@@ -269,6 +269,9 @@
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
                 playMainAudio(data);
                 
+                // 완료 페이지에 도달했을 때 부모 창으로 완료 상태 전송
+                window.parent.postMessage('lesson_complete', '*');
+                
             } else if (data.type === 'inline-speaking-quiz') {
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 document.getElementById('controls-area').classList.remove('hidden');
