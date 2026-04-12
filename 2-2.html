@@ -82,7 +82,7 @@
             <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
                 <div id="progress-container" class="hidden w-full flex-col gap-1">
                     <div class="flex justify-end w-full leading-none">
-                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/17</span>
+                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/18</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-1">
                         <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -116,39 +116,39 @@
         const lessonData = [
             { id: 1, type: 'intro', subtitle: "Mission débutant - Aller au convenience store", title: "100% Oral : À vous de parler !", buttonText: "Commencer" },
             { id: 2, type: 'title-card', title: "따라 말하기", subtitle: "Répétez les phrases que vous avez apprises dans la leçon précédente." },
-            { id: 3, type: 'repeat-quiz', krText: "포인트 있으세요?", frText: "Avez-vous les points de fidélité ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292480/2-S2_onmpsx.mp3", reference: "포인트 있으세요", threshold: 60 },
-            { id: 4, type: 'repeat-quiz', krText: "아니요, 없어요.", frText: "Non, je n’en ai pas.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292484/2-S3_h0vhas.mp3", reference: "아니요 없어요", threshold: 70 },
-            { id: 5, type: 'repeat-quiz', krText: "봉투 100원인데 필요하세요?", frText: "Le sac coûte 100 won. En avez-vous besoin ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3", reference: "봉투 100원인데 필요하세요", threshold: 60 },
-            { id: 6, type: 'repeat-quiz', krText: "네, 주세요.", frText: "Oui, s'il vous plaît.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292490/2-S5_ohv9ni.mp3", reference: "네 주세요", threshold: 70 },
-            { id: 7, type: 'repeat-quiz', krText: "삼천원입니다.", frText: "Il coûte 3000 KRW.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292497/2-S7_lz9y45.mp3", reference: "삼천원입니다", threshold: 60 },
-            { id: 8, type: 'repeat-quiz', krText: "여기요.", frText: "Voici.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292500/2-S8_j0yezl.mp3", reference: "여기요", threshold: 70 },
-            { id: 9, type: 'repeat-quiz', krText: "영수증 드릴까요?", frText: "Voulez-vous le ticket ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3", reference: "영수증 드릴까요", threshold: 60 },
-            { id: 10, type: 'repeat-quiz', krText: "아니요, 괜찮아요.", frText: "Non, ça va.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292493/2-S6_esbiiw.mp3", reference: "아니요 괜찮아요", threshold: 70 },
-            { id: 11, type: 'title-card', title: "직접 말하기", subtitle: "Parlez-vous même en coréen en utilisant les phrases que vous avez appris." },
+            { id: 3, type: 'repeat-quiz', krText: "포인트 있으세요?", frText: "Avez-vous les points de fidélité ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292480/2-S2_onmpsx.mp3", reference: "포인트 있으세요", threshold: 60, mandatoryTwoAttempts: false },
+            { id: 4, type: 'repeat-quiz', krText: "아니요, 없어요.", frText: "Non, je n’en ai pas.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292484/2-S3_h0vhas.mp3", reference: "아니요 없어요", threshold: 70, mandatoryTwoAttempts: true },
+            { id: 5, type: 'repeat-quiz', krText: "봉투 100원인데 필요하세요?", frText: "Le sac coûte 100 won. En avez-vous besoin ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3", reference: "봉투 100원인데 필요하세요", threshold: 60, mandatoryTwoAttempts: false },
+            { id: 6, type: 'repeat-quiz', krText: "네, 주세요.", frText: "Oui, Donnez-moi.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292490/2-S5_ohv9ni.mp3", reference: "네 주세요", threshold: 70, mandatoryTwoAttempts: true },
+            { id: 7, type: 'repeat-quiz', krText: "삼천원입니다.", frText: "Il coûte 3000 KRW.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292497/2-S7_lz9y45.mp3", reference: "삼천원입니다", threshold: 60, mandatoryTwoAttempts: false },
+            { id: 8, type: 'repeat-quiz', krText: "여기요.", frText: "Voici.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292500/2-S8_j0yezl.mp3", reference: "여기요", threshold: 70, mandatoryTwoAttempts: true },
+            { id: 9, type: 'repeat-quiz', krText: "영수증 드릴까요?", frText: "Voulez-vous le ticket ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3", reference: "영수증 드릴까요", threshold: 60, mandatoryTwoAttempts: false },
+            { id: 10, type: 'repeat-quiz', krText: "아니요, 괜찮아요.", frText: "Non, ça va.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292493/2-S6_esbiiw.mp3", reference: "아니요 괜찮아요", threshold: 70, mandatoryTwoAttempts: true },
+            { id: 11, type: 'title-card', title: "직접 말하기", subtitle: "Parlez-vous même en coréen en utilisant les phrases que vous avez apprises." },
             { 
                 id: 12, type: 'interactive-quiz', 
-                audioCard: { krText: "어서 오세요.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888007/S-2_o1flck.mp3" },
-                speakingCard: { hint: "Bonjour ?", answer: "안녕하세요?", reference: "안녕하세요", threshold: 70 }
+                audioCard: { krText: "어서 오세요!", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888007/S-2_o1flck.mp3" },
+                speakingCard: { hint: "Bonjour", answer: "안녕하세요?", reference: "안녕하세요", threshold: 70 }
             },
             { 
                 id: 13, type: 'interactive-quiz', 
                 audioCard: { krText: "포인트 있으세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292480/2-S2_onmpsx.mp3" },
-                speakingCard: { hint: "Oui, j'en ai. / Non, je n'en ai pas.", answer: "네, 있어요. / 아니요, 없어요.", reference: "네 있어요|아니요 없어요", threshold: 70 }
+                speakingCard: { hint: "Oui, j’en ai. / Non, je n’en ai pas.", answer: "네, 있어요. / 아니요, 없어요.", reference: "네 있어요|아니요 없어요", threshold: 70 }
             },
             { 
                 id: 14, type: 'interactive-quiz', 
                 audioCard: { krText: "봉투 100원인데 필요하세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3" },
-                speakingCard: { hint: "Oui, s'il vous plaît. / Non, ça va.", answer: "네, 주세요. / 아니요, 괜찮아요.", reference: "네 주세요|아니요 괜찮아요", threshold: 70 }
+                speakingCard: { hint: "Oui, donnez-moi. / Non, ça va.", answer: "네, 주세요. / 아니요, 괜찮아요.", reference: "네 주세요|아니요 괜찮아요", threshold: 70 }
             },
             { 
                 id: 15, type: 'interactive-quiz', 
-                audioCard: { krText: "삼천원입니다.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292497/2-S7_lz9y45.mp3" },
+                audioCard: { krText: "3000원입니다.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292497/2-S7_lz9y45.mp3" },
                 speakingCard: { hint: "Voici.", answer: "여기요.", reference: "여기요", threshold: 70 }
             },
             { 
                 id: 16, type: 'interactive-quiz', 
                 audioCard: { krText: "영수증 드릴까요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3" },
-                speakingCard: { hint: "Oui, s'il vous plaît. / Non, ça va.", answer: "네, 주세요. / 아니요, 괜찮아요.", reference: "네 주세요|아니요 괜찮아요", threshold: 70 }
+                speakingCard: { hint: "Oui, donnez-moi. / Non, ça va.", answer: "네, 주세요. / 아니요, 괜찮아요.", reference: "네 주세요|아니요 괜찮아요", threshold: 70 }
             },
             { 
                 id: 17, type: 'interactive-quiz', 
@@ -240,7 +240,6 @@
             document.getElementById('btn-next-text').innerText = "Suivant";
             document.getElementById('controls-area').classList.remove('hidden');
             
-            // 기본적으로 퀴즈 페이지라면 과제 완료 전까지 버튼 비활성화
             if (data.type === 'repeat-quiz' || data.type === 'interactive-quiz') {
                 nextBtn.disabled = !state.isPassed;
             } else {
@@ -336,7 +335,7 @@
                 `;
                 nextBtn.classList.add('invisible'); 
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
-                window.parent.postMessage('lesson_complete', '*');
+                window.parent.postMessage({ type: 'lesson_complete' }, '*');
             }
         }
 
@@ -344,8 +343,8 @@
             const overlay = document.getElementById('popup-overlay');
             const content = document.getElementById('popup-content');
             const state = pageStates[currentIndex];
-            const showFinal = state.isPassed || state.attemptsCount >= 3;
-            const hintOpacity = state.attemptsCount >= 1 ? 'opacity-100' : 'opacity-0';
+            const isCompleted = state.isPassed || state.attemptsCount >= 3;
+            const hasFailedOnce = state.attemptsCount >= 1;
 
             const defaultStatusText = state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler';
             const statusHtml = state.attemptsCount > 0 ? state.lastStatusHtml : defaultStatusText;
@@ -358,7 +357,7 @@
                 <div class="flex flex-col items-center w-full h-full justify-center" style="gap: 4vh;">
                     
                     <div class="flex flex-col items-center justify-center w-full" style="gap: 1.5vh;">
-                        <button id="btn-popup-record" class="w-[clamp(4.5rem,14vw,5.5rem)] h-[clamp(4.5rem,14vw,5.5rem)] shrink-0 ${state.isPassed ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}>
+                        <button id="btn-popup-record" class="w-[clamp(4.5rem,14vw,5.5rem)] h-[clamp(4.5rem,14vw,5.5rem)] shrink-0 ${isCompleted ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isCompleted ? 'disabled' : ''}>
                             <i class="ph-fill ph-microphone text-[clamp(1.75rem,6vw,2.25rem)]"></i>
                         </button>
                         <div class="flex items-center justify-center w-full" style="min-height: 3.5vh;">
@@ -368,11 +367,11 @@
                         </div>
                     </div>
                     
-                    <div id="speaking-hint" class="text-[clamp(0.9rem,2.5vw,1.15rem)] font-bold text-blue-500 m-0 transition-opacity duration-300 leading-tight ${hintOpacity}">${data.speakingCard.hint}</div>
+                    <div id="speaking-hint" class="text-[clamp(0.9rem,2.5vw,1.15rem)] font-bold text-blue-500 m-0 transition-opacity duration-300 leading-tight ${hasFailedOnce ? 'opacity-100' : 'opacity-0'}">Hint: ${data.speakingCard.hint}</div>
                     
-                    <div id="speaking-answer" class="text-[clamp(1.1rem,3.5vw,1.4rem)] font-bold text-blue-500 m-0 leading-tight transition-all duration-300 ${showFinal ? 'opacity-100' : 'opacity-0'}">${data.speakingCard.answer}</div>
+                    <div id="speaking-answer" class="text-[clamp(1.1rem,3.5vw,1.4rem)] font-bold text-blue-500 m-0 leading-tight transition-all duration-300 ${isCompleted ? 'opacity-100' : 'opacity-0'}">Answer: ${data.speakingCard.answer}</div>
                     
-                    <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.6rem,2vh,0.9rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 text-[clamp(0.875rem,2.5vw,1.1rem)] leading-none mt-2">
+                    <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.6rem,2vh,0.9rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 text-[clamp(0.875rem,2.5vw,1.1rem)] leading-none mt-2 ${state.isPassed || state.attemptsCount >= 3 ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed || state.attemptsCount >= 3 ? '' : 'disabled'}>
                         Continuer <i class="ph ph-arrow-right ml-2"></i>
                     </button>
                     
@@ -446,30 +445,78 @@
 
             if (!isInteractive) {
                 const threshold = taskData.threshold || 60;
-                if (score >= threshold) {
-                    state.isPassed = true; status.innerHTML = `Très bien ! Passez à la suite.<br>` + scoreStr; status.className = baseClasses + 'text-green-500';
-                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n"); finishTask(btnEl, false);
-                } else if (att < 2) {
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr; status.className = baseClasses + 'text-yellow-600';
+                const isMandatory2 = lessonData[currentIndex].mandatoryTwoAttempts;
+
+                if (isMandatory2) {
+                    if (att < 2) {
+                        if (score >= threshold) {
+                            status.innerHTML = "Très bien, essayons encore une fois.<br>" + scoreStr;
+                            status.className = baseClasses + 'text-green-500';
+                        } else {
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                            status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                            status.className = baseClasses + 'text-yellow-600';
+                        }
+                        const bPlay = document.getElementById('btn-main-play');
+                        if (bPlay) setTimeout(() => bPlay.click(), 800);
+                    } else {
+                        state.isPassed = true;
+                        if (score >= threshold) {
+                            status.innerHTML = "Très bien ! Passez à la suite.<br>" + scoreStr;
+                            status.className = baseClasses + 'text-green-500';
+                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                        } else {
+                            status.innerHTML = "Bien essayé ! Passez à la suite.<br>" + scoreStr;
+                            status.className = baseClasses + 'text-gray-500';
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        }
+                        finishTask(btnEl, false);
+                    }
                 } else {
-                    state.isPassed = true; status.innerHTML = `Bien essayé ! Passez à la suite.<br>` + scoreStr; status.className = baseClasses + 'text-gray-500';
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s"); finishTask(btnEl, false);
+                    if (score >= threshold) {
+                        state.isPassed = true;
+                        status.innerHTML = `Très bien ! Passez à la suite.<br>` + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                        finishTask(btnEl, false);
+                    } else if (att < 2) {
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                        status.className = baseClasses + 'text-yellow-600';
+                        const bPlay = document.getElementById('btn-main-play');
+                        if (bPlay) setTimeout(() => bPlay.click(), 800);
+                    } else {
+                        state.isPassed = true;
+                        status.innerHTML = `Bien essayé ! Passez à la suite.<br>` + scoreStr;
+                        status.className = baseClasses + 'text-gray-500';
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        finishTask(btnEl, false);
+                    }
                 }
             } else {
                 const threshold = taskData.threshold || 70;
                 if (score >= threshold) {
-                    state.isPassed = true; status.innerHTML = `Très bien ! Passez à la suite.<br>` + scoreStr; status.className = baseClasses + 'text-green-500';
-                    document.getElementById('speaking-answer').classList.remove('opacity-0');
-                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n"); finishTask(btnEl, true);
+                    state.isPassed = true;
+                    status.innerHTML = `Très bien ! Passez à la suite.<br>` + scoreStr;
+                    status.className = baseClasses + 'text-green-500';
+                    const ans = document.getElementById('speaking-answer'); if(ans) ans.classList.replace('opacity-0', 'opacity-100');
+                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    finishTask(btnEl, true);
                 } else if (att < 3) {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr; status.className = baseClasses + 'text-yellow-600';
-                    document.getElementById('speaking-hint').classList.remove('opacity-0');
+                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                    status.className = baseClasses + 'text-yellow-600';
+                    const hint = document.getElementById('speaking-hint'); if(hint) hint.classList.replace('opacity-0', 'opacity-100');
+                    // 직접 말하기 퀴즈에서도 재시도시 큐 오디오 자동재생 보강
+                    const bCuePlay = document.getElementById('btn-cue-play');
+                    if (bCuePlay) setTimeout(() => bCuePlay.click(), 800);
                 } else {
-                    state.isPassed = true; status.innerHTML = `Bien essayé ! Passez à la suite.<br>` + scoreStr; status.className = baseClasses + 'text-gray-500';
-                    document.getElementById('speaking-answer').classList.remove('opacity-0');
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s"); finishTask(btnEl, true);
+                    state.isPassed = true;
+                    status.innerHTML = `Bien essayé ! Passez à la suite.<br>` + scoreStr;
+                    status.className = baseClasses + 'text-gray-500';
+                    const ans = document.getElementById('speaking-answer'); if(ans) ans.classList.replace('opacity-0', 'opacity-100');
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    finishTask(btnEl, true);
                 }
             }
             state.lastStatusHtml = status.innerHTML;
@@ -477,9 +524,15 @@
         }
 
         function finishTask(btnEl, isInteractive) {
-            btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
+            btnEl.disabled = true; 
+            btnEl.classList.replace('bg-green-500', 'bg-gray-300'); 
+            btnEl.classList.add('pointer-events-none'); 
             document.getElementById('btn-next').disabled = false;
-            if (isInteractive) document.getElementById('btn-popup-toggle').classList.remove('invisible');
+            if (isInteractive) {
+                document.getElementById('btn-popup-toggle').classList.remove('invisible');
+                const bNextPop = document.getElementById('btn-popup-next');
+                if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            }
         }
 
         window.addEventListener('beforeunload', stopAllMedia);
