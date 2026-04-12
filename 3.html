@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mission débutant - Aller au convenience store - Leçon 3</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tone.js for Sounds -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <style>
@@ -151,6 +154,7 @@
 
         <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
             <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+                <!-- 팝업 내 조작 버튼 생성 금지. 오직 X 닫기 버튼만 유지 -->
                 <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
                     <i class="ph ph-x text-2xl"></i>
                 </button>
@@ -734,26 +738,16 @@
             const overlay = document.getElementById('popup-overlay');
             const content = document.getElementById('popup-content');
             
-            let trans = "Non détecté";
             let numericScore = 0;
-            let exp = "";
 
             if (!isError) {
                 state.attemptsCount++;
                 
-                // 프롬프트 규칙에 따라 <Transcription>, <Score>, <explication> 태그 파싱
-                const tMatch = rawText.match(/<Transcription>([\s\S]*?)<\/?Transcription>/i);
+                // 점수 제어를 위한 파싱 (점수 추출)
                 const sMatch = rawText.match(/<Score>([\s\S]*?)<\/?Score>/i);
-                const eMatch = rawText.match(/<explication>([\s\S]*?)<\/?explication>/i);
-
-                if (tMatch) trans = tMatch[1].trim();
                 if (sMatch) {
                     const scoreText = sMatch[1].trim();
                     numericScore = parseInt(scoreText.replace(/[^0-9]/g, ''), 10) || 0;
-                }
-                if (eMatch) exp = eMatch[1].trim();
-                else if (!tMatch && !sMatch) {
-                    exp = rawText; // 태그 없이 온 경우 방어 코드
                 }
             }
             
@@ -792,7 +786,7 @@
             state.lastStatusHtml = status.innerHTML;
             state.lastStatusClass = status.className;
 
-            // 팝업 생성: 다른 버튼 없이 오직 정보와 X(닫기)만 디스플레이
+            // 팝업 표시
             overlay.classList.remove('hidden');
             
             let popupHtml = '';
@@ -805,34 +799,15 @@
                     </div>
                 `;
             } else {
-                const safeTrans = trans.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                const safeExp = exp.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                // 사용자의 요청에 따라 모든 임의의 HTML 박스(디자인) 제거.
+                // 줄바꿈만 유지한 플레인 텍스트 그대로를 화면에 출력합니다.
+                const safeRawText = rawText.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 
                 popupHtml = `
-                    <div class="flex flex-col items-start gap-5 w-full px-2 py-4">
-                        <h3 class="font-extrabold text-xl text-center text-blue-600 w-full border-b-2 border-blue-100 pb-3 m-0">Résultat</h3>
-                        
-                        <div class="w-full">
-                            <span class="font-bold text-gray-800 text-sm block mb-1">Transcription</span>
-                            <div class="p-3 bg-blue-50 rounded-lg text-blue-800 text-sm font-medium border border-blue-100 break-words">
-                                ${safeTrans}
-                            </div>
+                    <div class="w-full px-2 py-4 max-h-[60vh] overflow-y-auto">
+                        <div class="text-left text-gray-800 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+${safeRawText}
                         </div>
-                        
-                        <div class="w-full flex items-center gap-3">
-                            <span class="font-bold text-gray-800 text-sm">Score :</span>
-                            <span class="font-black text-2xl ${numericScore === 20 ? 'text-green-500' : 'text-yellow-600'}">${numericScore}</span>
-                            <span class="font-bold text-gray-400 text-sm">/ 20</span>
-                        </div>
-                        
-                        ${numericScore !== 20 && safeExp ? `
-                        <div class="w-full">
-                            <span class="font-bold text-gray-800 text-sm block mb-1">Explication</span>
-                            <div class="p-3 bg-gray-50 rounded-lg text-gray-700 text-sm border border-gray-200 leading-relaxed">
-                                ${safeExp}
-                            </div>
-                        </div>
-                        ` : ''}
                     </div>
                 `;
             }
