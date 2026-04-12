@@ -137,7 +137,7 @@
             },
             { 
                 id: 14, type: 'interactive-quiz', 
-                audioCard: { krText: "봉투 100원인데 필요하세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3" },
+                audioCard: { krText: "봉투 100원인데 필요하세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3" },
                 speakingCard: { hint: "Oui, donnez-moi. / Non, ça va.", answer: "네, 주세요. / 아니요, 괜찮아요.", reference: "네 주세요|아니요 괜찮아요", threshold: 70 }
             },
             { 
@@ -292,7 +292,7 @@
                     };
                 };
                 bRecord.onclick = () => toggleRecording(data, bRecord, 'main-status', false);
-                if (!state.isPassed) setTimeout(() => bPlay.click(), 500);
+                if (!state.isPassed && state.attemptsCount === 0) setTimeout(() => bPlay.click(), 500);
             } else if (data.type === 'interactive-quiz') {
                 if (state.isPassed) document.getElementById('btn-popup-toggle').classList.remove('invisible');
                 area.innerHTML = `
@@ -321,10 +321,14 @@
                     const orig = bCuePlay.innerHTML; bCuePlay.innerHTML = `<i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i>`;
                     currentAudio.onended = () => { 
                         bCuePlay.innerHTML = orig; 
-                        if (!state.isPassed) popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1000);
+                        // 팝업이 닫혀있을 때만 열도록 강제하여 렌더링 충돌 방지
+                        const overlay = document.getElementById('popup-overlay');
+                        if (overlay.classList.contains('hidden') && !state.isPassed) {
+                            popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1000);
+                        }
                     };
                 };
-                if (!state.isPassed) setTimeout(() => bCuePlay.click(), 500);
+                if (!state.isPassed && state.attemptsCount === 0) setTimeout(() => bCuePlay.click(), 500);
             } else if (data.type === 'outro') {
                 area.innerHTML = `
                     <div class="text-yellow-500 animate-pop-in"><i class="ph-fill ph-confetti text-icon"></i></div>
@@ -371,7 +375,7 @@
                     
                     <div id="speaking-answer" class="text-[clamp(1.1rem,3.5vw,1.4rem)] font-bold text-blue-500 m-0 leading-tight transition-all duration-300 ${isCompleted ? 'opacity-100' : 'opacity-0'}">Answer: ${data.speakingCard.answer}</div>
                     
-                    <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.6rem,2vh,0.9rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 text-[clamp(0.875rem,2.5vw,1.1rem)] leading-none mt-2 ${state.isPassed || state.attemptsCount >= 3 ? '' : 'opacity-50 cursor-not-allowed'}" ${state.isPassed || state.attemptsCount >= 3 ? '' : 'disabled'}>
+                    <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.6rem,2vh,0.9rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 text-[clamp(0.875rem,2.5vw,1.1rem)] leading-none mt-2 ${isCompleted ? '' : 'opacity-50 cursor-not-allowed'}" ${isCompleted ? '' : 'disabled'}>
                         Continuer <i class="ph ph-arrow-right ml-2"></i>
                     </button>
                     
@@ -382,7 +386,7 @@
             const bNext = document.getElementById('btn-popup-next');
             const bClose = document.getElementById('btn-close-popup');
 
-            bRecord.onclick = () => toggleRecording(data.speakingCard, bRecord, 'popup-status', true);
+            bRecord.onclick = () => toggleRecording(data, bRecord, 'popup-status', true);
             bNext.onclick = () => { overlay.classList.add('hidden'); document.getElementById('btn-next').click(); };
             bClose.onclick = () => { overlay.classList.add('hidden'); if(state.isPassed) document.getElementById('btn-next').disabled = false; };
         }
@@ -414,7 +418,7 @@
             const reader = new FileReader(); reader.readAsDataURL(blob);
             reader.onloadend = async () => {
                 const base64 = reader.result.split(',')[1];
-                const refs = taskData.reference.split('|');
+                const refs = isInteractive ? taskData.speakingCard.reference.split('|') : taskData.reference.split('|');
                 let bestScore = 0;
                 for(const r of refs) {
                     try {
@@ -494,7 +498,7 @@
                     }
                 }
             } else {
-                const threshold = taskData.threshold || 70;
+                const threshold = taskData.speakingCard.threshold || 70;
                 if (score >= threshold) {
                     state.isPassed = true;
                     status.innerHTML = `Très bien ! Passez à la suite.<br>` + scoreStr;
@@ -507,9 +511,11 @@
                     status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
                     status.className = baseClasses + 'text-yellow-600';
                     const hint = document.getElementById('speaking-hint'); if(hint) hint.classList.replace('opacity-0', 'opacity-100');
-                    // 직접 말하기 퀴즈에서도 재시도시 큐 오디오 자동재생 보강
-                    const bCuePlay = document.getElementById('btn-cue-play');
-                    if (bCuePlay) setTimeout(() => bCuePlay.click(), 800);
+                    
+                    // 팝업이 다시 렌더링되지 않도록 직접 오디오 객체를 생성해서 재생
+                    if (taskData.audioCard && taskData.audioCard.audio) {
+                        setTimeout(() => new Audio(taskData.audioCard.audio).play(), 500);
+                    }
                 } else {
                     state.isPassed = true;
                     status.innerHTML = `Bien essayé ! Passez à la suite.<br>` + scoreStr;
@@ -531,7 +537,10 @@
             if (isInteractive) {
                 document.getElementById('btn-popup-toggle').classList.remove('invisible');
                 const bNextPop = document.getElementById('btn-popup-next');
-                if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                if(bNextPop) { 
+                    bNextPop.disabled = false; 
+                    bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); 
+                }
             }
         }
 
