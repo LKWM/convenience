@@ -154,7 +154,6 @@
 
         <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
             <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
-                <!-- X Close 버튼을 렌더링 영역 상단에 고정 -->
                 <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
                     <i class="ph ph-x text-2xl"></i>
                 </button>
@@ -199,9 +198,10 @@
         let popupAudio = null;
         let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
         
-        // 단순하고 직관적인 상태 관리
         let pageStates = lessonData.map(() => ({ 
             isPassed: false, 
+            isSkipped: false,
+            hasSeenPopup: false,
             audioPlayed: false,
             attemptsCount: 0,
             lastStatusHtml: '',
@@ -323,11 +323,9 @@
                     nextBtn.disabled = false; 
                     pageStates[index].isPassed = true; 
                 } else {
-                    // 메인 오디오를 끝까지 다 들은 적이 있다면 Exercice 버튼 노출
                     if (pageStates[index].audioPlayed) {
                         toggleBtn.classList.remove('invisible');
                         
-                        // 12페이지(Speaking quiz)이고 아직 통과하지 못했다면 다음 버튼 비활성화, 나머진 활성화
                         const isSpeakingQuiz = data.popup && data.popup.type === 'speaking-quiz';
                         if (isSpeakingQuiz && !pageStates[index].isPassed) {
                             nextBtn.disabled = true;
@@ -353,8 +351,7 @@
                 if (onEndCallback) onEndCallback(); 
                 return; 
             }
-            
-            // 이전에 오디오를 다 들은 적이 있으면 자동재생 안 함
+
             if (pageStates[currentIndex].audioPlayed) {
                 if (data.type.includes('popup')) document.getElementById('btn-popup-toggle').classList.remove('invisible');
                 if (onEndCallback) onEndCallback();
@@ -377,6 +374,7 @@
             const overlay = document.getElementById('popup-overlay');
             overlay.classList.remove('hidden');
             const state = pageStates[currentIndex];
+            state.hasSeenPopup = true;
             renderTask(lessonObj.popup || lessonObj, state); 
         }
 
@@ -387,22 +385,22 @@
             const content = document.getElementById('popup-content');
             let contentHtml = '';
 
-            // 이전 상태 기록 렌더링 (점수, 피드백 등)
             const defaultStatus = isSpeakingQuiz ? 'Appuyez pour répondre' : 'Appuyez sur le micro pour parler';
             const statusHtml = state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : defaultStatus);
             const statusClass = state.attemptsCount > 0 ? state.lastStatusClass : (state.isPassed ? 'text-green-500' : 'text-gray-500');
             
-            // 시도 횟수 기반 마이크 버튼 비활성화 결정 (Repeat은 통과 여부와 무관하게 횟수만 체크)
             let maxAttempts = isSpeakingQuiz ? (taskData.maxAttempts || 3) : 2;
             let isRecordDisabled = isRepeat ? (state.attemptsCount >= maxAttempts) : (state.isPassed || state.attemptsCount >= maxAttempts);
 
-            // Continuer 버튼 로직: 12페이지(Speaking quiz)이고 아직 통과 못했을 때만 잠금. 나머지(Card with speaking 포함)는 무조건 풀림.
             const isQuizLocked = isSpeakingQuiz && !state.isPassed;
             const btnNextClass = isQuizLocked ? 'opacity-50 cursor-not-allowed' : '';
             const btnNextDisabled = isQuizLocked ? 'disabled' : '';
 
             if (isAudioOnly) {
                 contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
                     <div class="text-yellow-500 m-0"><i class="ph-fill ph-speaker-high text-6xl"></i></div>
                     <div class="flex flex-col items-center gap-2 w-full text-center">
                         <h2 class="text-2xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
@@ -419,6 +417,9 @@
                     </div>`).join('') + `</div>`;
 
                 contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
                     ${optionsHtml}
                     <div class="flex items-center justify-center gap-5 w-full h-16 mt-2">
                         <button id="btn-popup-record" class="w-16 h-16 ${isRecordDisabled ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isRecordDisabled ? 'disabled' : ''}><i class="ph-fill ph-microphone text-3xl"></i></button>
@@ -430,6 +431,9 @@
                 `;
             } else if (isRepeat) {
                 contentHtml = `
+                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
                     <div class="flex flex-col items-center gap-2 w-full text-center">
                         <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
                         <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
@@ -455,15 +459,13 @@
                 document.getElementById('popup-overlay').classList.add('hidden'); 
                 const nextBtn = document.getElementById('btn-next');
                 nextBtn.disabled = false;
+                if (!state.isPassed) state.isSkipped = true;
                 nextBtn.click(); 
             };
 
-            // X 닫기 버튼: 팝업을 안전하게 숨기고 Exercice 버튼 노출. (안 푼 문제는 그대로 유지됨)
             if(bClose) bClose.onclick = () => {
                 document.getElementById('popup-overlay').classList.add('hidden');
                 document.getElementById('btn-popup-toggle').classList.remove('invisible');
-                
-                // 12페이지(Speaking quiz)를 통과하지 않은 상태에서 닫았을 때만 다음 버튼 잠금 유지
                 if (!isQuizLocked) {
                     document.getElementById('btn-next').disabled = false;
                 }
@@ -488,6 +490,7 @@
                                 state.lastStatusHtml = st.innerHTML; 
                                 state.lastStatusClass = st.className;
                             }
+                            if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
                         }
                     };
                 };
@@ -522,7 +525,6 @@
             const reader = new FileReader(); reader.readAsDataURL(blob);
             reader.onloadend = async () => {
                 const base64 = reader.result.split(',')[1];
-                
                 const refs = taskData.reference.split('|');
                 let bestScore = 0;
                 let apiSuccess = false;
@@ -543,12 +545,11 @@
                             apiSuccess = true;
                             const json = await res.json(); 
                             const recognizedText = json.text || json.recognized || "";
-                            
                             const sim = calculateSimilarity(recognizedText, r);
                             if(sim > bestScore) bestScore = sim; 
                         }
                     } catch (e) {
-                        console.error("STT Request Error:", e);
+                        console.error("STT Error:", e);
                     }
                 }
 
@@ -583,23 +584,28 @@
             const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
 
             if (isRepeat) {
-                if (score >= threshold) {
-                    state.isPassed = true;
-                    status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
-                    status.className = baseClasses + 'text-green-500';
-                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    if (att >= 2) finishTask(btnEl);
-                } else if (att < 2) {
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
-                    status.className = baseClasses + 'text-yellow-600';
+                if (att < 2) {
+                    if (score >= threshold) {
+                        status.innerHTML = "Très bien, essayons encore une fois." + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                    } else {
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
+                        status.className = baseClasses + 'text-yellow-600';
+                    }
                     const bPlay = document.getElementById('btn-popup-play');
                     if (bPlay) setTimeout(() => bPlay.click(), 800);
                 } else {
                     state.isPassed = true;
-                    status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
-                    status.className = baseClasses + 'text-gray-500';
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    if (score >= threshold) {
+                        status.innerHTML = "Très bien ! Passez à la suite." + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    } else {
+                        status.innerHTML = "Bien essayé ! Passez à la suite." + scoreStr;
+                        status.className = baseClasses + 'text-gray-500';
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    }
                     finishTask(btnEl);
                 }
             } else if (isQuiz) {
@@ -622,7 +628,6 @@
                 }
             }
             
-            // UI 상태를 보존하여 나중에 다시 열었을 때 그대로 보이게 함
             state.lastStatusHtml = status.innerHTML;
             state.lastStatusClass = status.className;
         }
