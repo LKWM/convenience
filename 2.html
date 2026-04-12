@@ -392,9 +392,9 @@
             const statusHtml = state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : defaultStatus);
             const statusClass = state.attemptsCount > 0 ? state.lastStatusClass : (state.isPassed ? 'text-green-500' : 'text-gray-500');
             
-            // 시도 횟수 기반 마이크 버튼 비활성화 결정
+            // 시도 횟수 기반 마이크 버튼 비활성화 결정 (Repeat은 통과 여부와 무관하게 횟수만 체크)
             let maxAttempts = isSpeakingQuiz ? (taskData.maxAttempts || 3) : 2;
-            let isRecordDisabled = state.isPassed || state.attemptsCount >= maxAttempts;
+            let isRecordDisabled = isRepeat ? (state.attemptsCount >= maxAttempts) : (state.isPassed || state.attemptsCount >= maxAttempts);
 
             // Continuer 버튼 로직: 12페이지(Speaking quiz)이고 아직 통과 못했을 때만 잠금. 나머지(Card with speaking 포함)는 무조건 풀림.
             const isQuizLocked = isSpeakingQuiz && !state.isPassed;
@@ -588,7 +588,7 @@
                     status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
                     status.className = baseClasses + 'text-green-500';
                     if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    finishTask(btnEl);
+                    if (att >= 2) finishTask(btnEl);
                 } else if (att < 2) {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                     status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
