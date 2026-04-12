@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mission débutant - Aller au convenience store - Leçon 3</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Tone.js for Sounds -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <style>
@@ -68,7 +65,7 @@
         .text-body { font-size: clamp(1rem, 3vw, 1.25rem); line-height: 1.5; color: #374151; }
         .text-icon { font-size: clamp(3.5rem, 10vw, 5rem); }
 
-        /* 6. Vocab & Answer Card (Chunky Button Style) */
+        /* 6. Vocab & Answer Card */
         .vocab-box {
             background: white;
             border-radius: 1.25rem;
@@ -126,7 +123,6 @@
         <div id="lesson-view" class="lesson-card">
             <div id="content-area"></div>
 
-            <!-- Bottom Control Area -->
             <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
                 <div id="progress-container" class="hidden w-full flex-col gap-1">
                     <div class="flex justify-end w-full leading-none">
@@ -199,7 +195,6 @@
 
         const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
         const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
-        
         const GEMINI_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/Geminichat';
         const GEMINI_SYSTEM_INSTRUCTION = "유저는 한국어를 배우는 A1 수준 학생으로 “… 있어요?” 구조를 활용해 편의점에 원하는 물건이 있는지 묻는다. 응답은 유저의 답을 그대로 전사하는 <Transcription>, 유저의 응답을 상황의 적절성 (편의점), 어휘의 정확도, 문법, 맞춤법을 기준으로 점수/20 형태로 평가하는 <Score>, 그리고 프랑스어로 감점 요인을 설명하는 <explication>란으로 구분한다. Explication은 20점이 아닌 경우에만 작성하며 2문장 이내로 매우 짧고 간결하게 설명한다.";
 
@@ -238,18 +233,9 @@
         }
 
         function stopAllMedia() {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-            }
-            if (popupAudio) {
-                popupAudio.pause();
-                popupAudio.currentTime = 0;
-            }
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                isRecording = false;
-            }
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); isRecording = false; }
             clearTimeout(inlineRecTimeout);
         }
 
@@ -408,6 +394,9 @@
             };
         }
 
+        // ==========================================
+        // 일반 따라 말하기(Repeat) 및 오디오 팝업 관련 로직
+        // ==========================================
         function showPopupSequence(lessonObj) {
             const overlay = document.getElementById('popup-overlay');
             overlay.classList.remove('hidden');
@@ -431,9 +420,6 @@
 
             if (isAudioOnly) {
                 contentHtml = `
-                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
-                        <i class="ph ph-x text-2xl"></i>
-                    </button>
                     <div class="text-yellow-500 m-0"><i class="ph-fill ph-speaker-high text-6xl"></i></div>
                     <div class="flex flex-col items-center gap-2 w-full text-center">
                         <h2 class="text-2xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
@@ -444,9 +430,6 @@
                 `;
             } else if (isRepeat) {
                 contentHtml = `
-                    <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
-                        <i class="ph ph-x text-2xl"></i>
-                    </button>
                     <div class="flex flex-col items-center gap-2 w-full text-center">
                         <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${taskData.krText}</h2>
                         <p class="text-base text-gray-500 m-0">${taskData.frText}</p>
@@ -594,56 +577,36 @@
             state.attemptsCount++;
             const att = state.attemptsCount;
             const threshold = taskData.threshold || 80;
-            const isRepeat = taskData.type === 'repeat';
             
             btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
             btnEl.classList.remove('recording-pulse');
             const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
             const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
 
-            if (isRepeat) {
-                if (att < 2) {
-                    if (score >= threshold) {
-                        status.innerHTML = "Très bien, essayons encore une fois." + scoreStr;
-                        status.className = baseClasses + 'text-green-500';
-                    } else {
-                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                        status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
-                        status.className = baseClasses + 'text-yellow-600';
-                    }
-                    const bPlay = document.getElementById('btn-popup-play');
-                    if (bPlay) setTimeout(() => bPlay.click(), 800);
-                } else {
-                    state.isPassed = true;
-                    if (score >= threshold) {
-                        status.innerHTML = "Très bien ! Passez à la suite." + scoreStr;
-                        status.className = baseClasses + 'text-green-500';
-                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    } else {
-                        status.innerHTML = "Bien essayé ! Passez à la suite." + scoreStr;
-                        status.className = baseClasses + 'text-gray-500';
-                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    }
-                    finishPopupTask(btnEl);
-                }
-            } else {
+            // 일반 따라말하기 팝업에서의 4가지 규칙 로직
+            if (att < 2) {
                 if (score >= threshold) {
-                    state.isPassed = true;
-                    status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
+                    status.innerHTML = "Très bien, essayons encore une fois." + scoreStr;
                     status.className = baseClasses + 'text-green-500';
-                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    finishPopupTask(btnEl);
-                } else if (att < (taskData.maxAttempts || 3)) {
+                } else {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                     status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
                     status.className = baseClasses + 'text-yellow-600';
+                }
+                const bPlay = document.getElementById('btn-popup-play');
+                if (bPlay) setTimeout(() => bPlay.click(), 800);
+            } else {
+                state.isPassed = true;
+                if (score >= threshold) {
+                    status.innerHTML = "Très bien ! Passez à la suite." + scoreStr;
+                    status.className = baseClasses + 'text-green-500';
+                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
                 } else {
-                    state.isPassed = true;
-                    status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
+                    status.innerHTML = "Bien essayé ! Passez à la suite." + scoreStr;
                     status.className = baseClasses + 'text-gray-500';
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    finishPopupTask(btnEl);
                 }
+                finishPopupTask(btnEl);
             }
             
             state.lastStatusHtml = status.innerHTML;
@@ -654,11 +617,14 @@
             btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
         }
 
+        // ==========================================
+        // [Page 12] Gemini 자유 발화 로직 (12페이지)
+        // ==========================================
         async function toggleInlineRecording(taskData, btnEl) {
             if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
             if (isRecording) {
                 clearTimeout(inlineRecTimeout);
-                stopInlineRecording(taskData, btnEl); 
+                stopInlineRecording(btnEl); 
                 return; 
             }
             try {
@@ -683,14 +649,15 @@
                     st.className = 'text-red-500 w-full text-center m-0'; 
                 }
 
+                // 발화 제한 8초
                 inlineRecTimeout = setTimeout(() => {
-                    if(isRecording) stopInlineRecording(taskData, btnEl);
+                    if(isRecording) stopInlineRecording(btnEl);
                 }, 8000);
 
             } catch (err) { alert("Mic access error."); }
         }
 
-        function stopInlineRecording(taskData, btnEl) {
+        function stopInlineRecording(btnEl) {
             if(mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
                 isRecording = false;
@@ -740,7 +707,7 @@
                         const result = await res.json();
                         const rawText = result.text || ""; 
                         
-                        showRawGeminiFeedbackPopup(rawText, btnEl, status);
+                        parseAndShowGeminiFeedback(rawText, btnEl, status);
 
                     } catch (apiError) {
                         console.error("Gemini API Error", apiError);
@@ -748,96 +715,136 @@
                         btnEl.classList.remove('recording-pulse');
                         btnEl.disabled = false;
                         
-                        let errorMessage = "Erreur de connexion. Veuillez réessayer.";
+                        let errorMessage = "Erreur de connexion au serveur.";
                         if(apiError.message.includes('503') || apiError.message.includes('UNAVAILABLE') || apiError.message.includes('high demand')) {
                             errorMessage = "Erreur 503 : Le serveur est actuellement surchargé.";
                         }
                         
-                        showRawGeminiFeedbackPopup(errorMessage, btnEl, status, true);
+                        parseAndShowGeminiFeedback(errorMessage, btnEl, status, true);
                     }
                 };
             } catch (err) {
                 console.warn("Processing error", err);
-                showRawGeminiFeedbackPopup("Erreur de traitement", btnEl, status, true);
+                parseAndShowGeminiFeedback("Erreur de traitement interne", btnEl, status, true);
             }
         }
 
-        function showRawGeminiFeedbackPopup(rawText, btnEl, status, isError = false) {
+        function parseAndShowGeminiFeedback(rawText, btnEl, status, isError = false) {
             const state = pageStates[currentIndex];
             const overlay = document.getElementById('popup-overlay');
             const content = document.getElementById('popup-content');
             
-            let isPerfect = false;
+            let trans = "Non détecté";
+            let numericScore = 0;
+            let exp = "";
+
             if (!isError) {
-                isPerfect = rawText.includes("20/20") || rawText.includes("20 / 20");
+                state.attemptsCount++;
+                
+                // 프롬프트 규칙에 따라 <Transcription>, <Score>, <explication> 태그 파싱
+                const tMatch = rawText.match(/<Transcription>([\s\S]*?)<\/?Transcription>/i);
+                const sMatch = rawText.match(/<Score>([\s\S]*?)<\/?Score>/i);
+                const eMatch = rawText.match(/<explication>([\s\S]*?)<\/?explication>/i);
+
+                if (tMatch) trans = tMatch[1].trim();
+                if (sMatch) {
+                    const scoreText = sMatch[1].trim();
+                    numericScore = parseInt(scoreText.replace(/[^0-9]/g, ''), 10) || 0;
+                }
+                if (eMatch) exp = eMatch[1].trim();
+                else if (!tMatch && !sMatch) {
+                    exp = rawText; // 태그 없이 온 경우 방어 코드
+                }
             }
             
-            state.attemptsCount++;
             const att = state.attemptsCount;
-            
             btnEl.innerHTML = `<i class="ph-fill ph-microphone text-3xl"></i>`;
             btnEl.classList.remove('recording-pulse');
 
-            const safeRawText = rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            let baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors m-0 ';
             
-            let nextActionHtml = "";
+            // 본 화면(12페이지)의 상태(status) 업데이트 및 버튼 통제 로직
             if (isError) {
-                nextActionHtml = `<button id="btn-feedback-retry" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-4">Fermer</button>`;
-            } else if (isPerfect || att >= 2) {
-                nextActionHtml = `<button id="btn-feedback-continue" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-4">Continuer <i class="ph ph-arrow-right ml-2"></i></button>`;
+                status.innerHTML = "Une erreur s'est produite. Veuillez réessayer.";
+                status.className = baseClasses + 'text-red-500';
+                btnEl.disabled = false;
             } else {
-                nextActionHtml = `
-                    <button id="btn-feedback-retry" class="px-6 py-3 bg-yellow-500 text-white rounded-full font-bold shadow-md hover:bg-yellow-600 w-full max-w-[200px] mt-4"><i class="ph ph-arrow-counter-clockwise mr-2"></i> Réessayer</button>
-                    <button id="btn-feedback-continue" class="px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[200px] mt-2">Continuer <i class="ph ph-arrow-right ml-2"></i></button>
-                `;
-            }
-
-            overlay.classList.remove('hidden');
-            
-            content.innerHTML = `
-                <div class="flex flex-col items-center gap-2 w-full text-center">
-                    <div class="w-full text-left p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto max-h-[60vh] whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
-${safeRawText}
-                    </div>
-                    ${nextActionHtml}
-                </div>
-            `;
-
-            const closeAction = (forceContinue = false) => {
-                overlay.classList.add('hidden');
-                let baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors m-0 ';
-                
-                if (isError) {
-                    status.innerHTML = "Une erreur s'est produite. Veuillez réessayer.";
-                    status.className = baseClasses + 'text-red-500';
-                    btnEl.disabled = false;
-                    state.attemptsCount--; 
-                    return;
-                }
-
-                if (isPerfect || forceContinue || att >= 2) {
+                if (numericScore === 20) {
                     state.isPassed = true;
-                    status.innerHTML = isPerfect ? `Très bien ! Passez à la suite.` : `Bien essayé ! Passez à la suite.`;
-                    status.className = baseClasses + (isPerfect ? 'text-green-500' : 'text-gray-500');
-                    if (isPerfect && successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    else if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    status.innerHTML = `Très bien ! Passez à la suite.`;
+                    status.className = baseClasses + 'text-green-500';
+                    if (successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
                     finishInlineTask(btnEl);
-                } else {
+                } else if (att < 2) {
                     status.innerHTML = "On y est presque ! Essayons encore une fois.";
                     status.className = baseClasses + 'text-yellow-600';
                     btnEl.disabled = false;
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                } else {
+                    state.isPassed = true;
+                    status.innerHTML = `Bien essayé ! Passez à la suite.`;
+                    status.className = baseClasses + 'text-gray-500';
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    finishInlineTask(btnEl);
                 }
-            };
+            }
 
-            const btnRetry = document.getElementById('btn-feedback-retry');
-            const btnContinue = document.getElementById('btn-feedback-continue');
+            state.lastStatusHtml = status.innerHTML;
+            state.lastStatusClass = status.className;
+
+            // 팝업 생성: 다른 버튼 없이 오직 정보와 X(닫기)만 디스플레이
+            overlay.classList.remove('hidden');
             
-            if(btnRetry) btnRetry.onclick = () => closeAction(false);
-            if(btnContinue) btnContinue.onclick = () => {
-                if (isError) closeAction(false); 
-                else closeAction(true); 
-            };
+            let popupHtml = '';
+            if (isError) {
+                popupHtml = `
+                    <div class="flex flex-col items-center gap-4 w-full px-2 py-4 text-center">
+                        <i class="ph-fill ph-warning-circle text-5xl text-red-500"></i>
+                        <span class="font-bold text-gray-800 text-lg">${rawText}</span>
+                        <p class="text-sm text-gray-500">Fermez cette fenêtre et réessayez.</p>
+                    </div>
+                `;
+            } else {
+                const safeTrans = trans.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const safeExp = exp.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                
+                popupHtml = `
+                    <div class="flex flex-col items-start gap-5 w-full px-2 py-4">
+                        <h3 class="font-extrabold text-xl text-center text-blue-600 w-full border-b-2 border-blue-100 pb-3 m-0">Résultat</h3>
+                        
+                        <div class="w-full">
+                            <span class="font-bold text-gray-800 text-sm block mb-1">Transcription</span>
+                            <div class="p-3 bg-blue-50 rounded-lg text-blue-800 text-sm font-medium border border-blue-100 break-words">
+                                ${safeTrans}
+                            </div>
+                        </div>
+                        
+                        <div class="w-full flex items-center gap-3">
+                            <span class="font-bold text-gray-800 text-sm">Score :</span>
+                            <span class="font-black text-2xl ${numericScore === 20 ? 'text-green-500' : 'text-yellow-600'}">${numericScore}</span>
+                            <span class="font-bold text-gray-400 text-sm">/ 20</span>
+                        </div>
+                        
+                        ${numericScore !== 20 && safeExp ? `
+                        <div class="w-full">
+                            <span class="font-bold text-gray-800 text-sm block mb-1">Explication</span>
+                            <div class="p-3 bg-gray-50 rounded-lg text-gray-700 text-sm border border-gray-200 leading-relaxed">
+                                ${safeExp}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = popupHtml;
+
+            const bClose = document.getElementById('btn-close-popup');
+            if(bClose) {
+                bClose.onclick = () => {
+                    overlay.classList.add('hidden');
+                };
+            }
         }
 
         function finishInlineTask(btnEl) {
@@ -867,7 +874,10 @@ ${safeRawText}
             } 
         });
 
-        document.getElementById('btn-popup-toggle').onclick = () => { const d = lessonData[currentIndex]; if(d.popup) showPopupSequence(d); };
+        document.getElementById('btn-popup-toggle').onclick = () => { 
+            const d = lessonData[currentIndex]; 
+            if(d.popup) showPopupSequence(d); 
+        };
 
         loadPage(0);
     </script>
