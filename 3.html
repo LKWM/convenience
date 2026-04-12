@@ -303,7 +303,7 @@
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
                 playMainAudio(data);
                 
-                window.parent.postMessage('lesson_complete', '*');
+                window.parent.postMessage({ type: 'lesson_complete' }, '*');
                 
             } else if (data.type === 'inline-speaking-quiz') {
                 document.getElementById('btn-next-text').innerText = "Suivant";
@@ -338,7 +338,6 @@
                     if(bRec) bRec.disabled = false;
                 }
 
-                // Inline 퀴즈는 통과해야만 다음 페이지 이동 가능
                 nextBtn.disabled = !state.isPassed;
 
                 playMainAudio(data, () => {
@@ -427,11 +426,9 @@
             const statusHtml = state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : defaultStatus);
             const statusClass = state.attemptsCount > 0 ? state.lastStatusClass : (state.isPassed ? 'text-green-500' : 'text-gray-500');
             
-            // Repeat은 통과 여부와 상관없이 2회 시도 기회 보장
             let maxAttempts = 2;
             let isRecordDisabled = isRepeat ? (state.attemptsCount >= maxAttempts) : (state.isPassed || state.attemptsCount >= maxAttempts);
 
-            // Continuer 버튼 100% 활성화 (팝업에서는 통과 전에 비활성화하지 않음)
             if (isAudioOnly) {
                 contentHtml = `
                     <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
@@ -519,7 +516,6 @@
             if(bRecord) bRecord.onclick = () => toggleRecording(taskData, bRecord);
         }
 
-        // --- Standard Clova Recording Logic ---
         async function toggleRecording(taskData, btnEl) {
             if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
             if (isRecording) { stopRecording(); btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
@@ -559,7 +555,7 @@
                                 audioBase64: base64, 
                                 languageCode: "Kor",
                                 referenceText: r,
-                                assessment: false // Clova 점수 평가 비활성화
+                                assessment: false
                             }) 
                         });
                         
@@ -606,23 +602,28 @@
             const baseClasses = 'text-sm md:text-base font-bold text-center w-full transition-colors ';
 
             if (isRepeat) {
-                if (score >= threshold) {
-                    state.isPassed = true;
-                    status.innerHTML = `Très bien ! Passez à la suite.` + scoreStr;
-                    status.className = baseClasses + 'text-green-500';
-                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    if (att >= 2) finishPopupTask(btnEl);
-                } else if (att < 2) {
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
-                    status.className = baseClasses + 'text-yellow-600';
+                if (att < 2) {
+                    if (score >= threshold) {
+                        status.innerHTML = "Très bien, essayons encore une fois." + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                    } else {
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        status.innerHTML = "On y est presque ! Essayons encore une fois." + scoreStr;
+                        status.className = baseClasses + 'text-yellow-600';
+                    }
                     const bPlay = document.getElementById('btn-popup-play');
                     if (bPlay) setTimeout(() => bPlay.click(), 800);
                 } else {
                     state.isPassed = true;
-                    status.innerHTML = `Bien essayé ! Passez à la suite.` + scoreStr;
-                    status.className = baseClasses + 'text-gray-500';
-                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    if (score >= threshold) {
+                        status.innerHTML = "Très bien ! Passez à la suite." + scoreStr;
+                        status.className = baseClasses + 'text-green-500';
+                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    } else {
+                        status.innerHTML = "Bien essayé ! Passez à la suite." + scoreStr;
+                        status.className = baseClasses + 'text-gray-500';
+                        if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    }
                     finishPopupTask(btnEl);
                 }
             } else {
@@ -653,7 +654,6 @@
             btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
         }
 
-        // --- Inline Speaking Quiz (Gemini API) Logic ---
         async function toggleInlineRecording(taskData, btnEl) {
             if (btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
             if (isRecording) {
@@ -848,14 +848,12 @@ ${safeRawText}
             document.getElementById('btn-next').disabled = false;
         }
 
-        // 글로벌 이벤트 리스너: 창 전환, 종료 시 미디어 정지
         window.addEventListener('beforeunload', stopAllMedia);
         window.addEventListener('pagehide', stopAllMedia);
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) stopAllMedia();
         });
 
-        // --- Controls ---
         document.getElementById('btn-next').addEventListener('click', async () => { 
             if(currentIndex === 0) await initSynths(); 
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
