@@ -309,7 +309,7 @@
                 `;
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
                 playMainAudio(data);
-                window.parent.postMessage('lesson_complete', '*');
+                window.parent.postMessage({ type: 'lesson_complete' }, '*');
             } else {
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 document.getElementById('controls-area').classList.remove('hidden');
