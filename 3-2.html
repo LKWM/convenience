@@ -467,7 +467,7 @@
                             status.className = baseClasses + 'text-green-500';
                         } else {
                             if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                            status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
+                            status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
                             status.className = baseClasses + 'text-yellow-600';
                         }
                         const bPlay = document.getElementById('btn-main-play');
@@ -494,7 +494,7 @@
                         finishTask(btnEl, false);
                     } else if (att < 2) {
                         if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                        status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
+                        status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
                         status.className = baseClasses + 'text-yellow-600';
                         const bPlay = document.getElementById('btn-main-play');
                         if (bPlay) setTimeout(() => bPlay.click(), 800);
@@ -517,7 +517,7 @@
                     finishTask(btnEl, true);
                 } else if (att < 3) {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
+                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
                     status.className = baseClasses + 'text-yellow-600';
                     const hint = document.getElementById('speaking-hint'); if(hint) hint.classList.replace('opacity-0', 'opacity-100');
                     if (taskData.audioCard && taskData.audioCard.audio) {
