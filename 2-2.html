@@ -273,7 +273,7 @@
                             <button id="btn-main-play" class="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] shrink-0 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md hover:bg-yellow-500 transition-colors"><i class="ph-fill ph-play text-[clamp(1.5rem,5vw,2rem)]"></i></button>
                             <button id="btn-main-record" class="w-[clamp(4rem,12vw,5rem)] h-[clamp(4rem,12vw,5rem)] shrink-0 ${state.isPassed ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-[clamp(1.5rem,5vw,2rem)]"></i></button>
                         </div>
-                        <div class="flex flex-col items-center justify-center w-full">
+                        <div class="flex flex-col items-center justify-center w-full" style="height: clamp(4rem, 12vh, 6rem);">
                             <p id="main-status" class="${state.attemptsCount > 0 ? state.lastStatusClass : `text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full m-0`}">${state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler')}</p>
                         </div>
                     </div>
@@ -306,7 +306,7 @@
                                 <span id="cue-hint-icon" class="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold"><i class="ph-bold ph-lightbulb"></i> Indice</span>
                             </div>
                         </div>
-                        <p class="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 animate-pulse m-0 ${state.isPassed ? 'hidden' : ''}">Le quiz commencera après l'audio...</p>
+                        <p class="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 animate-pulse m-0 ${state.isPassed ? 'invisible' : ''}">Le quiz commencera après l'audio...</p>
                     </div>
                 `;
                 document.getElementById('cue-hint-container').onclick = () => {
@@ -364,7 +364,7 @@
                         <button id="btn-popup-record" class="w-[clamp(4.5rem,14vw,5.5rem)] h-[clamp(4.5rem,14vw,5.5rem)] shrink-0 ${isCompleted ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isCompleted ? 'disabled' : ''}>
                             <i class="ph-fill ph-microphone text-[clamp(1.75rem,6vw,2.25rem)]"></i>
                         </button>
-                        <div class="flex items-center justify-center w-full" style="min-height: 3.5vh;">
+                        <div class="flex items-center justify-center w-full" style="height: clamp(4rem, 12vh, 6rem);">
                             <p id="popup-status" class="${statusClass}">
                                 ${statusHtml}
                             </p>
