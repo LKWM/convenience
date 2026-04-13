@@ -71,6 +71,18 @@
             display: flex; align-items: center; justify-content: center;
             transition: all 0.2s; white-space: nowrap;
         }
+
+        /* 팝업 내 여백 최적화 */
+        .popup-flex-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -106,7 +118,7 @@
         </div>
 
         <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
-            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] h-[70vh] flex flex-col animate-pop-in relative border-4 border-yellow-400" style="padding: clamp(1rem, 3vh, 1.5rem);">
+            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] h-[75vh] flex flex-col animate-pop-in relative border-4 border-yellow-400" style="padding: clamp(1.5rem, 4vh, 2rem);">
                 <div id="popup-content" class="w-full h-full"></div>
             </div>
         </div>
@@ -120,27 +132,27 @@
             { id: 4, type: 'repeat-quiz', krText: "바나나 우유 있어요?", frText: "Avez-vous du lait à la banane ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775585967/S3-2_tilbcv.mp3", reference: "바나나 우유 있어요", threshold: 70, mandatoryTwoAttempts: true },
             { id: 5, type: 'repeat-quiz', krText: "캔커피 옆에 있어요.", frText: "Ils sont à côté du café en canette.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586036/S3-3_u1lynz.mp3", reference: "캔커피 옆에 있어요", threshold: 60, mandatoryTwoAttempts: false },
             { id: 6, type: 'repeat-quiz', krText: "이거 더 있어요?", frText: "Vous en avez d'autres ?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586041/S3-4_hgosnc.mp3", reference: "이거 더 있어요", threshold: 70, mandatoryTwoAttempts: true },
-            { id: 7, type: 'repeat-quiz', krText: "아니요, 한 개 밖에 없어요.", frText: "Non, il n’y en a qu’un seul.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586045/S3-5_jkodmq.mp3", reference: "아니요 한 개 밖에 없어요", threshold: 60, mandatoryTwoAttempts: false },
+            { id: 7, type: 'repeat-quiz', krText: "아니요, 한 개 밖에 없어요.", frText: "Non, il n’y en a qu’un seul.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775586045/S3-5_jkodmq.mp3", reference: "아니요 한 개 밖에 없어요|아니요 한개 밖에 없어요", threshold: 60, mandatoryTwoAttempts: false },
             { id: 8, type: 'title-card', title: "직접 말하기", subtitle: "Parlez-vous même en coréen en utilisant les phrases que vous avez apprises." },
             { 
                 id: 9, type: 'interactive-quiz', 
                 audioCard: { krText: "어서 오세요, 찾으시는 거 있으세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1776061092/Ex-2_pexqmj.wav" },
-                speakingCard: { instruction: "Demandez s’il y a du lait à la banane.", hint: "바나나 우유", answer: "바나나 우유 있어요?", reference: "바나나 우유 있어요", threshold: 70 }
+                speakingCard: { consigne: "Demandez s’il y a du lait à la banane.", hint: "바나나 우유", answer: "바나나 우유 있어요?", reference: "바나나 우유 있어요", threshold: 70 }
             },
             { 
                 id: 10, type: 'interactive-quiz', 
-                audioCard: null, 
-                speakingCard: { instruction: "Demandez s'il y en a plus.", hint: "plus = 더", answer: "이거 더 있어요?", reference: "이거 더 있어요", threshold: 70 }
+                audioCard: { krText: "(Demandez s'il y en a plus.)", audio: "" },
+                speakingCard: { consigne: "Demandez s'il y en a plus.", hint: "plus = 더", answer: "이거 더 있어요?", reference: "이거 더 있어요", threshold: 70 }
             },
             { 
                 id: 11, type: 'interactive-quiz', 
                 audioCard: { krText: "결제 도와드릴게요. 4000원입니다.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav" },
-                speakingCard: { hint: "voici.", answer: "여기요.", reference: "여기요", threshold: 70 }
+                speakingCard: { consigne: "Payez en disant 'Voici'.", hint: "voici.", answer: "여기요.", reference: "여기요", threshold: 70 }
             },
             { 
                 id: 12, type: 'interactive-quiz', 
                 audioCard: { krText: "감사합니다, 안녕히 가세요.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888032/S-3_w316i0.wav" },
-                speakingCard: { hint: "Au revoir.", answer: "안녕히 계세요.", reference: "안녕히 계세요", threshold: 70 }
+                speakingCard: { consigne: "Dites au revoir.", hint: "Au revoir.", answer: "안녕히 계세요.", reference: "안녕히 계세요", threshold: 70 }
             },
             { id: 13, type: 'outro', title: "Bon travail !", subtitle: "Vous avez pratiqué toutes les phrases apprises dans les chapitres 1 à 3. Passez au jeu de rôle et tenez une conversation en coréen !" }
         ];
@@ -260,7 +272,7 @@
                             <button id="btn-main-play" class="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] shrink-0 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md hover:bg-yellow-500 transition-colors"><i class="ph-fill ph-play text-[clamp(1.5rem,5vw,2rem)]"></i></button>
                             <button id="btn-main-record" class="w-[clamp(4rem,12vw,5rem)] h-[clamp(4rem,12vw,5rem)] shrink-0 ${state.isPassed ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${state.isPassed ? 'disabled' : ''}><i class="ph-fill ph-microphone text-[clamp(1.5rem,5vw,2rem)]"></i></button>
                         </div>
-                        <div class="flex flex-col items-center justify-center w-full" style="height: clamp(4rem, 12vh, 6rem);">
+                        <div class="flex flex-col items-center justify-center w-full" style="min-height: clamp(3.5rem, 8vh, 5rem);">
                             <p id="main-status" class="${state.attemptsCount > 0 ? state.lastStatusClass : `text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold ${state.isPassed ? 'text-green-500' : 'text-gray-500'} text-center w-full m-0`}">${state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : 'Appuyez sur le micro pour parler')}</p>
                         </div>
                     </div>
@@ -282,53 +294,47 @@
                 if (!state.isPassed && state.attemptsCount === 0) setTimeout(() => bPlay.click(), 500);
             } else if (data.type === 'interactive-quiz') {
                 if (state.isPassed) document.getElementById('btn-popup-toggle').classList.remove('invisible');
-                
-                if (data.audioCard) {
-                    area.innerHTML = `
-                        <div class="flex flex-col items-center w-full text-center animate-fade-in max-w-lg" style="gap: clamp(1rem, 3vh, 2rem);">
-                            <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl w-full relative shadow-sm flex flex-col items-center" style="padding: clamp(1.5rem, 4vh, 2.5rem); gap: clamp(0.5rem, 2vh, 1rem);">
-                                <div class="flex justify-center items-center w-full">
-                                    <button id="btn-cue-play" class="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center shadow hover:bg-blue-600 transition"><i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i></button>
-                                </div>
-                                <div id="cue-hint-container" class="cursor-pointer text-blue-500 hover:text-blue-700 transition-colors inline-flex items-center font-bold" style="gap: clamp(0.25rem, 1vw, 0.5rem);">
-                                    <span id="cue-hint-text" class="hidden text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold">${data.audioCard.krText}</span>
-                                    <span id="cue-hint-icon" class="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold"><i class="ph-bold ph-lightbulb"></i> Indice</span>
-                                </div>
+                area.innerHTML = `
+                    <div class="flex flex-col items-center w-full text-center animate-fade-in max-w-lg" style="gap: clamp(1rem, 3vh, 2rem);">
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl w-full relative shadow-sm flex flex-col items-center" style="padding: clamp(1.5rem, 4vh, 2.5rem); gap: clamp(0.5rem, 2vh, 1rem);">
+                            <div class="flex justify-center items-center w-full">
+                                <button id="btn-cue-play" class="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center shadow hover:bg-blue-600 transition ${!data.audioCard.audio ? 'hidden' : ''}"><i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i></button>
+                                ${!data.audioCard.audio ? '<div class="text-blue-500 font-bold">Lisez la consigne attentivement.</div>' : ''}
                             </div>
-                            <p class="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 animate-pulse m-0 ${state.isPassed ? 'invisible' : ''}">Le quiz commencera après l'audio...</p>
-                        </div>
-                    `;
-                    document.getElementById('cue-hint-container').onclick = () => {
-                        document.getElementById('cue-hint-icon').classList.add('hidden');
-                        document.getElementById('cue-hint-text').classList.remove('hidden');
-                    };
-                    const bCuePlay = document.getElementById('btn-cue-play');
-                    bCuePlay.onclick = () => {
-                        if (isRecording) return;
-                        if(currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-                        currentAudio = new Audio(data.audioCard.audio); currentAudio.play();
-                        const orig = bCuePlay.innerHTML; bCuePlay.innerHTML = `<i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i>`;
-                        currentAudio.onended = () => { 
-                            bCuePlay.innerHTML = orig; 
-                            const overlay = document.getElementById('popup-overlay');
-                            if (overlay.classList.contains('hidden') && !state.isPassed) {
-                                popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1000);
-                            }
-                        };
-                    };
-                    if (!state.isPassed && state.attemptsCount === 0) setTimeout(() => bCuePlay.click(), 500);
-                } else {
-                    area.innerHTML = `
-                        <div class="flex flex-col items-center w-full text-center animate-fade-in max-w-lg" style="gap: clamp(1rem, 3vh, 2rem);">
-                            <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl w-full relative shadow-sm flex flex-col items-center justify-center" style="padding: clamp(1.5rem, 4vh, 2.5rem); height: clamp(8rem, 20vh, 12rem);">
-                                <p class="text-[clamp(1.1rem,3vw,1.5rem)] font-bold text-gray-800 m-0 px-2">${data.speakingCard.instruction}</p>
+                            <div id="cue-hint-container" class="cursor-pointer text-blue-500 hover:text-blue-700 transition-colors inline-flex items-center font-bold" style="gap: clamp(0.25rem, 1vw, 0.5rem);">
+                                <span id="cue-hint-text" class="hidden text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-center">${data.audioCard.krText}</span>
+                                <span id="cue-hint-icon" class="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold"><i class="ph-bold ph-lightbulb"></i> Indice</span>
                             </div>
-                            <p class="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 animate-pulse m-0 ${state.isPassed ? 'invisible' : ''}">Préparez-vous à parler...</p>
                         </div>
-                    `;
-                    if (!state.isPassed && state.attemptsCount === 0) {
-                        popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1500);
+                        <p class="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 animate-pulse m-0 ${state.isPassed ? 'hidden' : ''}">Le quiz commencera sous peu...</p>
+                    </div>
+                `;
+                document.getElementById('cue-hint-container').onclick = () => {
+                    document.getElementById('cue-hint-icon').classList.add('hidden');
+                    document.getElementById('cue-hint-text').classList.remove('hidden');
+                };
+                const bCuePlay = document.getElementById('btn-cue-play');
+                bCuePlay.onclick = () => {
+                    if (isRecording) return;
+                    if(currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+                    currentAudio = new Audio(data.audioCard.audio); currentAudio.play();
+                    const orig = bCuePlay.innerHTML; bCuePlay.innerHTML = `<i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i>`;
+                    currentAudio.onended = () => { 
+                        bCuePlay.innerHTML = orig; 
+                        triggerPopup(data, state);
+                    };
+                };
+
+                function triggerPopup(data, state) {
+                    const overlay = document.getElementById('popup-overlay');
+                    if (overlay.classList.contains('hidden') && !state.isPassed) {
+                        popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1000);
                     }
+                }
+
+                if (!state.isPassed && state.attemptsCount === 0) {
+                    if (data.audioCard.audio) setTimeout(() => bCuePlay.click(), 500);
+                    else setTimeout(() => triggerPopup(data, state), 1500);
                 }
             } else if (data.type === 'outro') {
                 area.innerHTML = `
@@ -359,17 +365,14 @@
                 <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
                     <i class="ph ph-x text-[clamp(1.25rem,4vw,2rem)]"></i>
                 </button>
-                <div class="flex flex-col items-center w-full h-full" style="padding: clamp(0.5rem, 1vh, 1rem);">
-                    
-                    <div class="flex flex-col items-center justify-center w-full text-center" style="min-height: clamp(4rem, 15vh, 6rem); margin-bottom: 2vh;">
-                        ${data.speakingCard.instruction ? `
-                            <p class="text-[clamp(1.1rem,3.2vw,1.4rem)] font-extrabold text-blue-800 m-0 leading-tight">${data.speakingCard.instruction}</p>
-                        ` : ''}
+                <div class="popup-flex-container">
+                    <div class="w-full flex justify-center items-center text-center">
+                        <p class="text-[clamp(0.9rem,3vw,1.25rem)] font-bold text-gray-700 m-0 leading-tight px-4">${data.speakingCard.consigne || 'Écoutez et parlez'}</p>
                     </div>
 
-                    <div class="flex flex-col items-center justify-center w-full flex-1" style="gap: 2vh;">
-                        <button id="btn-popup-record" class="w-[clamp(4.5rem,14vw,5.5rem)] h-[clamp(4.5rem,14vw,5.5rem)] shrink-0 ${isCompleted ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isCompleted ? 'disabled' : ''}>
-                            <i class="ph-fill ph-microphone text-[clamp(1.75rem,6vw,2.25rem)]"></i>
+                    <div class="flex flex-col items-center justify-center w-full gap-4">
+                        <button id="btn-popup-record" class="w-[clamp(4.5rem,15vw,6rem)] h-[clamp(4.5rem,15vw,6rem)] shrink-0 ${isCompleted ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white rounded-full flex items-center justify-center shadow-lg transition-all" ${isCompleted ? 'disabled' : ''}>
+                            <i class="ph-fill ph-microphone text-[clamp(1.75rem,6vw,2.5rem)]"></i>
                         </button>
                         <div class="flex items-center justify-center w-full" style="min-height: clamp(3rem, 10vh, 5rem);">
                             <p id="popup-status" class="${statusClass}">
@@ -378,17 +381,14 @@
                         </div>
                     </div>
                     
-                    <div class="flex flex-col items-center justify-center w-full" style="min-height: clamp(5rem, 15vh, 7rem); gap: 1vh; margin-top: 1vh;">
-                        <div id="speaking-hint" class="text-[clamp(0.9rem,2.5vw,1.1rem)] font-bold text-blue-500 m-0 transition-opacity duration-300 leading-tight ${hasFailedOnce ? 'opacity-100' : 'opacity-0'}">Hint: ${data.speakingCard.hint}</div>
-                        <div id="speaking-answer" class="text-[clamp(1.1rem,3.5vw,1.3rem)] font-bold text-blue-600 m-0 leading-tight transition-all duration-300 ${isCompleted ? 'opacity-100' : 'opacity-0'}">Answer: ${data.speakingCard.answer}</div>
+                    <div class="flex flex-col items-center justify-center w-full gap-2">
+                        <div id="speaking-hint" class="text-[clamp(0.9rem,2.8vw,1.15rem)] font-bold text-blue-500 m-0 transition-opacity duration-300 leading-tight ${hasFailedOnce ? 'opacity-100' : 'opacity-0'}">Hint: ${data.speakingCard.hint}</div>
+                        <div id="speaking-answer" class="text-[clamp(1.1rem,3.8vw,1.5rem)] font-bold text-blue-600 m-0 leading-tight transition-all duration-300 text-center px-2 ${isCompleted ? 'opacity-100' : 'opacity-0'}">Answer: ${data.speakingCard.answer}</div>
                     </div>
                     
-                    <div class="w-full flex justify-center pt-[1vh]">
-                        <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.7rem,2.2vh,1rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[240px] flex items-center justify-center transition-all duration-300 text-[clamp(0.9rem,2.5vw,1.1rem)] leading-none ${isCompleted ? '' : 'opacity-50 cursor-not-allowed'}" ${isCompleted ? '' : 'disabled'}>
-                            Continuer <i class="ph ph-arrow-right ml-2"></i>
-                        </button>
-                    </div>
-                    
+                    <button id="btn-popup-next" class="px-[clamp(1.5rem,5vw,2.5rem)] py-[clamp(0.6rem,2vh,0.9rem)] shrink-0 bg-blue-500 text-white rounded-full font-bold shadow-md hover:bg-blue-600 w-full max-w-[240px] flex items-center justify-center transition-opacity duration-300 text-[clamp(0.875rem,2.5vw,1.1rem)] leading-none ${isCompleted ? '' : 'opacity-50 cursor-not-allowed'}" ${isCompleted ? '' : 'disabled'}>
+                        Continuer <i class="ph ph-arrow-right ml-2"></i>
+                    </button>
                 </div>
             `;
             overlay.classList.remove('hidden');
@@ -495,7 +495,7 @@
                         finishTask(btnEl, false);
                     } else if (att < 2) {
                         if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                        status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                        status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
                         status.className = baseClasses + 'text-yellow-600';
                         const bPlay = document.getElementById('btn-main-play');
                         if (bPlay) setTimeout(() => bPlay.click(), 800);
@@ -518,10 +518,9 @@
                     finishTask(btnEl, true);
                 } else if (att < 3) {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                    status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
                     status.className = baseClasses + 'text-yellow-600';
                     const hint = document.getElementById('speaking-hint'); if(hint) hint.classList.replace('opacity-0', 'opacity-100');
-                    
                     if (taskData.audioCard && taskData.audioCard.audio) {
                         setTimeout(() => new Audio(taskData.audioCard.audio).play(), 500);
                     }
