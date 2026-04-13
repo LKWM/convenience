@@ -321,7 +321,6 @@
                     const orig = bCuePlay.innerHTML; bCuePlay.innerHTML = `<i class="ph-fill ph-speaker-high text-[clamp(1.5rem,5vw,2rem)]"></i>`;
                     currentAudio.onended = () => { 
                         bCuePlay.innerHTML = orig; 
-                        // 팝업이 닫혀있을 때만 열도록 강제하여 렌더링 충돌 방지
                         const overlay = document.getElementById('popup-overlay');
                         if (overlay.classList.contains('hidden') && !state.isPassed) {
                             popupTimeoutId = setTimeout(() => showInteractivePopup(data), 1000);
@@ -485,7 +484,7 @@
                         finishTask(btnEl, false);
                     } else if (att < 2) {
                         if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                        status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                        status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
                         status.className = baseClasses + 'text-yellow-600';
                         const bPlay = document.getElementById('btn-main-play');
                         if (bPlay) setTimeout(() => bPlay.click(), 800);
@@ -508,11 +507,10 @@
                     finishTask(btnEl, true);
                 } else if (att < 3) {
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                    status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
                     status.className = baseClasses + 'text-yellow-600';
                     const hint = document.getElementById('speaking-hint'); if(hint) hint.classList.replace('opacity-0', 'opacity-100');
                     
-                    // 팝업이 다시 렌더링되지 않도록 직접 오디오 객체를 생성해서 재생
                     if (taskData.audioCard && taskData.audioCard.audio) {
                         setTimeout(() => new Audio(taskData.audioCard.audio).play(), 500);
                     }
@@ -531,8 +529,8 @@
 
         function finishTask(btnEl, isInteractive) {
             btnEl.disabled = true; 
-            btnEl.classList.replace('bg-green-500', 'bg-gray-300'); 
-            btnEl.classList.add('pointer-events-none'); 
+            btnEl.classList.remove('bg-green-500', 'recording-pulse');
+            btnEl.classList.add('bg-gray-300', 'pointer-events-none'); 
             document.getElementById('btn-next').disabled = false;
             if (isInteractive) {
                 document.getElementById('btn-popup-toggle').classList.remove('invisible');
