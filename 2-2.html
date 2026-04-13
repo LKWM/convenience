@@ -56,7 +56,7 @@
             flex-direction: column;
             justify-content: center; 
             align-items: center;    
-            padding: clamp(1.5rem, 4vw, 3rem); 
+            padding: clamp(1rem, 3vw, 2.5rem); 
             gap: clamp(1rem, 3vh, 2rem);
             overflow: hidden;
             min-height: 0;
@@ -71,14 +71,6 @@
 
         .recording-pulse { animation: pulse-red 1.5s infinite; background-color: #EF4444 !important; color: white !important; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* Audio Wave - 팝업 내 상태 표시에만 사용 */
-        .audio-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 100%; width: 100%; }
-        .audio-wave span { display: block; width: 4px; background-color: #22C55E; border-radius: 2px; animation: wave 1s infinite ease-in-out; }
-        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
-        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
-        .audio-wave span:nth-child(4) { animation-delay: 0.6s; }
-        @keyframes wave { 0%, 100% { height: 30%; } 50% { height: 100%; } }
 
         #popup-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
         
@@ -105,7 +97,7 @@
             <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3">
                 <div id="progress-container" class="hidden w-full flex-col gap-1">
                     <div class="flex justify-end w-full leading-none">
-                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/18</span>
+                        <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/17</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-1">
                         <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -129,9 +121,9 @@
         </div>
 
         <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
-            <!-- 2강 원본 팝업 레이아웃 카피 적용 -->
-            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-[4px] border-yellow-400 p-[clamp(1.5rem,4vw,2rem)]">
-                <button id="btn-close-popup" class="absolute top-[clamp(1rem,2.5vw,1.5rem)] right-[clamp(1rem,2.5vw,1.5rem)] text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+            <!-- 팝업: 높이를 고정하지 않고 요소의 간격에 맞게 자연스럽게 줄어들도록 설정 (Shrink-wrap) -->
+            <div class="bg-white rounded-[2rem] shadow-2xl w-[90%] max-w-[420px] flex flex-col animate-pop-in relative border-[4px] border-yellow-400 p-[clamp(1.5rem,4vw,2rem)]">
+                <button id="btn-close-popup" class="absolute top-[clamp(0.75rem,2vw,1.25rem)] right-[clamp(0.75rem,2vw,1.25rem)] text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
                     <i class="ph ph-x text-[clamp(1.25rem,3vw,1.5rem)]"></i>
                 </button>
                 <div id="popup-content" class="w-full flex flex-col items-center justify-center"></div>
@@ -230,7 +222,8 @@
             if (currentIndex === 0 || currentIndex === lessonData.length - 1) container.classList.add('hidden');
             else {
                 container.classList.remove('hidden'); container.classList.add('flex');
-                const total = lessonData.length - 2; 
+                // 총 17페이지 계산으로 수정 완료
+                const total = 17; 
                 bar.style.width = `${(currentIndex / total) * 100}%`;
                 text.innerText = `${currentIndex}/${total}`;
             }
@@ -242,7 +235,7 @@
             document.getElementById('popup-overlay').classList.add('hidden');
             document.getElementById('btn-popup-toggle').classList.add('invisible');
             
-            // 페이지 전환 시에만 팝업 콘텐츠 초기화 (다시 열 때는 보존 유지)
+            // 팝업 데이터 초기화 (다시 열 때 상태 유지를 위해 페이지 전환 시에만)
             document.getElementById('popup-content').innerHTML = ''; 
             
             const nextBtn = document.getElementById('btn-next');
@@ -299,19 +292,16 @@
                 const statusClass = state.attemptsCount > 0 ? state.lastStatusClass : (state.isPassed ? 'text-green-500' : 'text-gray-500');
                 const isRecordDisabled = state.isPassed || state.attemptsCount >= data.maxAttempts;
                 
-                // 4페이지처럼 텍스트가 길어도 넘치지 않도록 카드 크기를 단단히 고정하고 텍스트 영역을 유연하게 처리
-                // h-[clamp(300px,50vh,400px)] 으로 카드 높이 제한 및 내부 flex-col, justify-between 적용
+                // 모바일 이탈 방지: 고정 높이 삭제, Shrink-wrap 적용 (높이 유연하게 텍스트 길이에 맞춰 자동 조절)
                 area.innerHTML = `
-                    <div class="bg-white rounded-[2rem] shadow-sm w-full max-w-[420px] h-[clamp(320px,50vh,400px)] flex flex-col items-center justify-between p-[clamp(1.5rem,4vw,2.5rem)] border-[4px] border-yellow-400 animate-pop-in mx-auto relative overflow-hidden">
+                    <div class="bg-white rounded-[2rem] shadow-sm w-[92%] max-w-[420px] flex flex-col items-center justify-center py-[clamp(1.5rem,4vh,2.5rem)] px-[clamp(1rem,4vw,2rem)] border-[4px] border-yellow-400 animate-pop-in mx-auto">
                         
-                        <!-- 텍스트 영역: 가용한 위쪽 공간을 차지하며 줄바꿈 관리, 텍스트 크기 최적화 -->
-                        <div class="flex-1 flex flex-col items-center justify-center gap-[clamp(0.5rem,1.5vh,1rem)] w-full text-center overflow-hidden">
-                            <h2 class="text-[clamp(1.15rem,4vw,1.6rem)] font-extrabold text-gray-800 m-0 leading-tight w-full break-keep">${data.krText}</h2>
-                            <p class="text-[clamp(0.85rem,2.5vw,1rem)] text-gray-500 m-0 w-full">${data.frText}</p>
+                        <div class="flex flex-col items-center gap-[clamp(0.5rem,1.5vh,1rem)] w-full text-center mb-[clamp(1rem,3vh,2rem)]">
+                            <h2 class="text-[clamp(1.2rem,6vw,1.75rem)] font-extrabold text-gray-800 m-0 leading-tight w-full break-keep">${data.krText}</h2>
+                            <p class="text-[clamp(0.9rem,4vw,1.1rem)] text-gray-500 m-0 w-full">${data.frText}</p>
                         </div>
                         
-                        <!-- 두 개의 버튼 영역: 높이를 고정하여 카드가 늘어나지 않게 방어 -->
-                        <div class="flex-none flex items-center justify-center gap-[clamp(1rem,4vw,1.5rem)] w-full h-[clamp(3.5rem,15vw,4.5rem)] my-[clamp(0.5rem,2vh,1rem)]">
+                        <div class="flex items-center justify-center gap-[clamp(1rem,5vw,2rem)] w-full mb-[clamp(1rem,3vh,1.5rem)]">
                             <button id="btn-play" class="w-[clamp(3.5rem,15vw,4.5rem)] aspect-square rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-md transition-colors hover:bg-yellow-500">
                                 <i class="ph-fill ph-play text-[clamp(1.5rem,6vw,2rem)]"></i>
                             </button>
@@ -320,15 +310,14 @@
                             </button>
                         </div>
                         
-                        <!-- 상태 텍스트 영역 -->
-                        <div class="flex-none flex items-center justify-center min-h-[3rem] w-full">
-                            <p id="card-status" class="text-[clamp(0.875rem,3vw,1rem)] font-bold ${statusClass} text-center w-full flex flex-col justify-center items-center leading-tight m-0">${statusHtml}</p>
+                        <div class="flex items-center justify-center min-h-[3rem] w-full">
+                            <p id="card-status" class="text-[clamp(0.875rem,3.5vw,1rem)] font-bold ${statusClass} text-center w-full flex flex-col justify-center items-center leading-tight m-0">${statusHtml}</p>
                         </div>
                     </div>
                 `;
                 
                 document.getElementById('btn-next-text').innerText = "Suivant";
-                nextBtn.disabled = false; // Card with repeat는 언제나 다음으로 이동 가능 (하단바)
+                nextBtn.disabled = false; // Card with repeat는 언제나 다음으로 이동 가능
                 
                 const bPlay = document.getElementById('btn-play');
                 const bRecord = document.getElementById('btn-record');
@@ -339,7 +328,7 @@
                     if(bRecord && !isRecordDisabled) { bRecord.disabled = true; bRecord.classList.add('opacity-50', 'pointer-events-none'); }
                     if(currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
                     
-                    // 2강 재생 시 로직 완전 카피: innerHTML 교체를 통해 아이콘이 자연스럽게 작아지게 만듦 (opacity 조작 없음)
+                    // 2강 로직: 아이콘 사이즈 자동 축소를 위한 innerHTML 교체
                     const origIcon = bPlay.innerHTML;
                     bPlay.innerHTML = '<i class="ph-fill ph-speaker-high"></i>';
                     
@@ -362,17 +351,19 @@
             } else if (data.type === 'audio-speaking') {
                 document.getElementById('controls-area').classList.remove('hidden');
                 
+                // 오디오 버튼 바로 아래 Indice 묶음 중앙 배치
                 area.innerHTML = `
-                    <div class="flex flex-col items-center justify-center w-full h-full gap-[clamp(1rem,3vh,1.5rem)]">
-                        <!-- 마이크(오디오) 버튼과 Indice를 묶어서 정중앙 배치 -->
-                        <button id="btn-main-play" class="w-[clamp(5rem,15vw,7rem)] aspect-square rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-xl hover:bg-yellow-500 transition-colors">
-                            <i class="ph-fill ph-play text-[clamp(2.5rem,8vw,3.5rem)]"></i>
-                        </button>
-                        
-                        <div id="hint-container" class="w-full flex items-center justify-center min-h-[2rem]">
-                            <button id="btn-toggle-hint" class="text-gray-400 font-bold text-[clamp(0.875rem,2.5vw,1rem)] hover:text-gray-600 transition-colors underline underline-offset-4">
-                                Indice
+                    <div class="flex flex-col items-center justify-center w-full h-full">
+                        <div class="flex flex-col items-center justify-center gap-[clamp(0.5rem,2vh,1rem)]">
+                            <button id="btn-main-play" class="w-[clamp(4.5rem,18vw,6rem)] aspect-square rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-xl hover:bg-yellow-500 transition-colors">
+                                <i class="ph-fill ph-play text-[clamp(2rem,8vw,3rem)]"></i>
                             </button>
+                            
+                            <div id="hint-container" class="flex items-center justify-center min-h-[2rem]">
+                                <button id="btn-toggle-hint" class="text-gray-400 font-bold text-[clamp(0.875rem,3vw,1rem)] hover:text-gray-600 transition-colors underline underline-offset-4">
+                                    Indice
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -385,14 +376,13 @@
                 const hintContainer = document.getElementById('hint-container');
 
                 btnToggleHint.onclick = function() {
-                    hintContainer.innerHTML = `<span class="text-gray-700 font-medium text-[clamp(1rem,3vw,1.125rem)] animate-fade-in px-4 text-center">${data.mainHint}</span>`;
+                    hintContainer.innerHTML = `<span class="text-gray-700 font-medium text-[clamp(1rem,3.5vw,1.125rem)] animate-fade-in px-4 text-center break-keep">${data.mainHint}</span>`;
                 };
 
                 const playAudioSequence = () => {
                     if (isRecording) return;
                     if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
                     
-                    // 재생 중 아이콘 축소 (2강 로직 적용, opacity 조작 없음)
                     const origIcon = btnMainPlay.innerHTML;
                     btnMainPlay.innerHTML = `<i class="ph-fill ph-speaker-high"></i>`;
 
@@ -410,7 +400,6 @@
                             });
                         }
                         
-                        // 오디오 재생 완료 후 정확히 1초 대기 후 팝업
                         currentAudio.onended = () => {
                             btnMainPlay.innerHTML = origIcon;
                             if (!pageStates[index].hasSeenPopup) {
@@ -418,7 +407,6 @@
                             }
                         };
                     } else {
-                        // 오디오가 없는 경우(audio: null 방어코드) 1초 뒤 강제 팝업
                         setTimeout(() => {
                             btnMainPlay.innerHTML = origIcon;
                             if (!pageStates[index].hasSeenPopup) {
@@ -445,7 +433,7 @@
             overlay.classList.remove('hidden');
             const state = pageStates[currentIndex];
             
-            // 상태(마지막 화면)를 100% 보존하기 위해 DOM이 비어있을 때만 새로 렌더링
+            // 상태(마지막 화면) 보존을 위해 DOM이 비어있을 때만 새로 렌더링
             if (!state.hasSeenPopup || document.getElementById('popup-content').innerHTML === '') {
                 state.hasSeenPopup = true;
                 renderTask(lessonObj.popup || lessonObj, state); 
@@ -466,37 +454,36 @@
             const btnNextClass = isQuizLocked ? 'opacity-50 cursor-not-allowed' : '';
             const btnNextDisabled = isQuizLocked ? 'disabled' : '';
 
-            // 레이아웃 흔들림 방지 (invisible로 공간 차지)
-            let hintClass = (state.attemptsCount > 0 && !state.isPassed) ? 'visible opacity-100' : 'invisible opacity-0';
+            let hintClass = (state.attemptsCount > 0 && !state.isPassed) || state.isPassed ? 'visible opacity-100' : 'invisible opacity-0';
             let answerClass = (state.isPassed || state.attemptsCount >= maxAttempts) ? 'visible opacity-100' : 'invisible opacity-0';
             
-            // 커리큘럼 요구 순서 완벽 준수 및 간격 균일화 (flex-col, gap-4)
-            // 상단선 - speaking 버튼 - 안내 텍스트 - indice - réponse(단어제외) - Continuer - 하단선
+            // 커리큘럼 요구 순서: 상단선 - speaking 버튼 - 안내 텍스트 - indice - réponse - Continuer - 하단선
+            // 동일한 gap을 적용하고 강제로 공간을 차지하는 justify-between이나 h-full을 없앰 (여백 제거)
             content.innerHTML = `
-                <div class="flex flex-col w-full items-center justify-center gap-[clamp(1rem,3vh,1.5rem)] w-full">
+                <div class="flex flex-col w-full items-center justify-center gap-[clamp(0.75rem,3vh,1.25rem)] w-full">
                     
-                    <!-- 1. Speaking 버튼 (비율 및 색상 원본대로) -->
-                    <button id="btn-popup-record" class="w-[clamp(3.5rem,15vw,4.5rem)] aspect-square rounded-full flex items-center justify-center shadow-lg transition-all ${isRecordDisabled ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white flex-none" ${isRecordDisabled ? 'disabled' : ''}>
+                    <!-- 1. Speaking 버튼 -->
+                    <button id="btn-popup-record" class="w-[clamp(3.5rem,15vw,4.5rem)] aspect-square rounded-full flex items-center justify-center shadow-lg transition-all ${isRecordDisabled ? 'bg-gray-300 pointer-events-none' : 'bg-green-500 hover:bg-green-600'} text-white" ${isRecordDisabled ? 'disabled' : ''}>
                         <i class="ph-fill ph-microphone text-[clamp(1.5rem,6vw,2rem)]"></i>
                     </button>
                     
                     <!-- 2. 안내 텍스트 -->
-                    <p id="popup-status" class="text-[clamp(0.875rem,3vw,1rem)] font-bold ${statusClass} text-center w-full flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] flex-none">
+                    <p id="popup-status" class="text-[clamp(0.875rem,3.5vw,1rem)] font-bold ${statusClass} text-center w-full flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em]">
                         ${statusHtml}
                     </p>
                     
                     <!-- 3. Indice -->
-                    <div id="quiz-hint" class="w-full text-center text-blue-600 font-bold text-[clamp(0.875rem,3vw,1rem)] min-h-[1.5em] transition-all duration-300 flex items-center justify-center m-0 flex-none ${hintClass}">
+                    <div id="quiz-hint" class="w-full text-center text-blue-600 font-bold text-[clamp(0.875rem,3.5vw,1rem)] min-h-[1.5em] transition-all duration-300 flex items-center justify-center m-0 ${hintClass}">
                         Indice : ${taskData.hint}
                     </div>
                     
-                    <!-- 4. 정답 (답만 표시, 과도한 크기 방지) -->
-                    <div id="quiz-answer" class="w-full text-center text-green-600 font-black text-[clamp(1.1rem,4vw,1.4rem)] min-h-[1.5em] transition-all duration-300 flex items-center justify-center m-0 flex-none ${answerClass}">
+                    <!-- 4. 정답 (답만 표시) -->
+                    <div id="quiz-answer" class="w-full text-center text-green-600 font-black text-[clamp(1.1rem,4vw,1.4rem)] min-h-[1.5em] transition-all duration-300 flex items-center justify-center m-0 break-keep ${answerClass}">
                         ${taskData.answer}
                     </div>
                     
                     <!-- 5. Continuer 버튼 -->
-                    <button id="btn-popup-next" class="px-[clamp(1.25rem,4vw,2rem)] py-[clamp(0.75rem,2vh,1rem)] bg-blue-500 text-white rounded-full font-bold text-[clamp(0.875rem,3vw,1rem)] shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 m-0 flex-none ${btnNextClass}" ${btnNextDisabled}>
+                    <button id="btn-popup-next" class="px-[clamp(1.25rem,4vw,2rem)] py-[clamp(0.75rem,2vh,1rem)] bg-blue-500 text-white rounded-full font-bold text-[clamp(0.875rem,3.5vw,1rem)] shadow-md hover:bg-blue-600 w-full max-w-[200px] flex items-center justify-center transition-opacity duration-300 m-0 ${btnNextClass}" ${btnNextDisabled}>
                         Continuer <i class="ph ph-arrow-right ml-2"></i>
                     </button>
 
@@ -516,7 +503,7 @@
                 nextBtn.click(); 
             };
 
-            // 팝업 닫기 시 요소를 삭제하지 않고 숨기기만 함 -> 마지막 화면 상태 100% 보존
+            // 닫기 버튼 클릭 시 요소 파괴 없이 display만 hidden -> 마지막 상태 유지
             if(bClose) bClose.onclick = () => {
                 document.getElementById('popup-overlay').classList.add('hidden');
                 document.getElementById('btn-popup-toggle').classList.remove('invisible');
@@ -542,8 +529,9 @@
                     processAudio(blob, taskData, btnEl, statusEl);
                 };
                 mediaRecorder.start(); isRecording = true;
-                btnEl.classList.add('recording-pulse'); btnEl.innerHTML = `<i class="ph-fill ph-stop text-[clamp(1.5rem,5vw,2rem)] text-white"></i>`;
-                if(statusEl) { statusEl.innerHTML = `<div class="audio-wave h-[2rem] mt-1"><span></span><span></span><span></span><span></span></div>`; statusEl.className = 'text-red-500 w-full text-center flex flex-col justify-center items-center font-bold text-[clamp(0.875rem,3vw,1rem)] leading-tight m-0 min-h-[1.5em] flex-none'; }
+                btnEl.classList.add('recording-pulse'); 
+                btnEl.innerHTML = `<i class="ph-fill ph-stop text-[clamp(1.5rem,5vw,2rem)] text-white"></i>`;
+                // 녹음 시 임의의 텍스트 추가 없이 기존 안내 텍스트 상태 유지
             } catch (err) { alert("Erreur d'accès au microphone."); }
         }
 
@@ -556,6 +544,9 @@
                 const refs = taskData.reference.split('|');
                 let bestScore = 0;
                 let apiSuccess = false;
+                
+                // 마이크 버튼 스피너 처리
+                btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-[clamp(1.5rem,5vw,2rem)]"></i>`;
                 
                 for(const r of refs) {
                     try {
@@ -584,7 +575,7 @@
                 if (!apiSuccess) {
                     if (statusEl) {
                         statusEl.innerHTML = "Erreur de connexion. Veuillez réessayer.";
-                        statusEl.className = 'text-[clamp(0.875rem,3vw,1rem)] font-bold text-center w-full transition-colors text-red-500 flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] flex-none';
+                        statusEl.className = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors text-red-500 flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em]';
                     }
                     btnEl.innerHTML = `<i class="ph-fill ph-microphone text-[clamp(1.5rem,5vw,2rem)]"></i>`;
                     btnEl.classList.remove('recording-pulse');
@@ -606,9 +597,9 @@
             btnEl.innerHTML = `<i class="ph-fill ph-microphone text-[clamp(1.5rem,5vw,2rem)] text-white"></i>`;
             btnEl.classList.remove('recording-pulse');
             
-            // % 없이 (Score: XX) 포맷 (2강 원본 카피)
+            // % 없이 (Score: XX) 포맷 
             const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
-            const baseClasses = 'text-[clamp(0.875rem,3vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] flex-none ';
+            const baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
 
             if (isRepeat) {
                 if (taskData.alwaysAttempt) {
@@ -663,10 +654,13 @@
                     statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
                     statusEl.className = baseClasses + 'text-green-500';
                     if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    
+                    // 성공 시 힌트와 답변 모두 강제 공개
                     const ans = document.getElementById('quiz-answer');
                     if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
                     const hint = document.getElementById('quiz-hint');
                     if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    
                     finishTask(btnEl);
                 } else if (att < maxAtt) {
                     statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
@@ -679,10 +673,12 @@
                     statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
                     statusEl.className = baseClasses + 'text-gray-500';
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    
                     const ans = document.getElementById('quiz-answer');
                     if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
                     const hint = document.getElementById('quiz-hint');
                     if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    
                     finishTask(btnEl);
                 }
             }
