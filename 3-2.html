@@ -72,7 +72,6 @@
             transition: all 0.2s; white-space: nowrap;
         }
 
-        /* 팝업 내 여백 최적화 */
         .popup-flex-container {
             display: flex;
             flex-direction: column;
@@ -468,7 +467,7 @@
                             status.className = baseClasses + 'text-green-500';
                         } else {
                             if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                            status.innerHTML = "On y est presque ! Essayons encore une fois.<br>" + scoreStr;
+                            status.innerHTML = "On y est presque ! Essayons encore uma fois.<br>" + scoreStr;
                             status.className = baseClasses + 'text-yellow-600';
                         }
                         const bPlay = document.getElementById('btn-main-play');
@@ -539,8 +538,9 @@
 
         function finishTask(btnEl, isInteractive) {
             btnEl.disabled = true; 
-            btnEl.classList.replace('bg-green-500', 'bg-gray-300'); 
-            btnEl.classList.add('pointer-events-none'); 
+            btnEl.classList.remove('bg-green-500', 'hover:bg-green-600');
+            btnEl.classList.add('bg-gray-300', 'pointer-events-none'); 
+            
             document.getElementById('btn-next').disabled = false;
             if (isInteractive) {
                 document.getElementById('btn-popup-toggle').classList.remove('invisible');
