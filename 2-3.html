@@ -304,6 +304,9 @@
         };
     }
 
+    // 미리 생성된 오디오 객체 배열 (버튼 클릭 시점에 모두 생성)
+    let preloadedAudios = [];
+
     // ── PAGE 2: Roleplay ──────────────────────────────────────────────────────────
     function renderPage2() {
         document.getElementById('content-area').innerHTML = `
@@ -320,6 +323,9 @@
             currentQuizIndex = 0;
             quizResults = [false, false, false, false];
 
+            // gesture context 안에서 모든 오디오 객체를 한꺼번에 생성
+            preloadedAudios = QUIZ_SEQUENCE.map(q => new Audio(q.audioUrl));
+
             const firstQuiz = QUIZ_SEQUENCE[0];
             const overlay = document.getElementById('popup-overlay');
             overlay.classList.remove('hidden');
@@ -333,8 +339,8 @@
                 </div>
             `;
 
-            if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
-            popupAudio = new Audio(firstQuiz.audioUrl);
+            // 발걸음 소리 후 2초 뒤 재생 — 이미 gesture context에서 생성된 객체 사용
+            popupAudio = preloadedAudios[0];
             setTimeout(() => {
                 popupAudio.play().catch(e => console.log(e));
                 popupAudio.onended = () => {
@@ -420,7 +426,6 @@
         overlay.classList.remove('hidden');
         const content = document.getElementById('popup-content');
 
-        // 닫기 버튼 비활성화 (진행 중에는 닫을 수 없음)
         document.getElementById('btn-close-popup').onclick = null;
         document.getElementById('btn-close-popup').classList.add('invisible');
 
@@ -433,8 +438,10 @@
             </div>
         `;
 
+        // preloadedAudios에서 꺼내 사용 — gesture context 밖에서 new Audio() 호출하지 않음
         if (popupAudio) { popupAudio.pause(); popupAudio.currentTime = 0; }
-        popupAudio = new Audio(quiz.audioUrl);
+        popupAudio = preloadedAudios[idx];
+        popupAudio.currentTime = 0;
         popupAudio.play().catch(e => console.log(e));
         popupAudio.onended = () => {
             const wave = document.getElementById('popup-wave');
