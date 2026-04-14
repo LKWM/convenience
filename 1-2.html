@@ -411,8 +411,8 @@
 
     function renderProceedBtn() {
         document.getElementById('proceed-btn-area').innerHTML = `
-            <button id="btn-proceed" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm">
-                <i class="ph ph-shopping-cart mr-2"></i>J'ai fini de choisir. Je vais passer à la caisse
+            <button id="btn-proceed" class="bg-green-500 text-white hover:bg-green-600 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding: clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem); font-size: clamp(0.8rem,2.2vw,1rem); white-space: normal; text-align: center; line-height: 1.4;">
+                <i class="ph ph-shopping-cart flex-shrink-0"></i><span>J'ai fini de choisir. Je vais passer à la caisse</span>
             </button>
         `;
         document.getElementById('btn-proceed').onclick = () => {
@@ -602,7 +602,7 @@
                     <div class="bg-green-50 border-2 border-green-300 rounded-2xl p-6 w-full">
                         <p class="text-[clamp(1rem,3vw,1.25rem)] font-bold text-green-700 m-0 leading-relaxed">
                             <span class="text-[clamp(1.2rem,4vw,1.5rem)] font-extrabold block mb-2">Félicitations 🥳</span>
-                            Vous avez réussi votre premier achat ! Maintenant, vous pouvez passez au Chapitre 2 avec confiance.
+                            Vous avez réussi votre premier achat. À présent, passez au Chapitre 2 avec confiance.
                         </p>
                     </div>
                 </div>
@@ -785,6 +785,7 @@
         if (currentIndex === 0) {
             // "Commencer" — synth 초기화를 여기서 완료해둠
             await initSynths();
+            if (transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s');
             currentIndex = 1;
             loadPage(currentIndex);
             return;
