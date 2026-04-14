@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mission débutant - Jeu de rôle : 세심한 구매</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background-color:#FEFCE8; touch-action:none; font-family:'Inter','Noto Sans',sans-serif; color:#1F2937; }
+        #app-container { width:100vw; height:100dvh; padding:clamp(10px,3vh,2rem); box-sizing:border-box; display:flex; justify-content:center; align-items:center; }
+        .lesson-card { width:100%; max-width:800px; height:100%; background:white; border-radius:1.5rem; border:2px solid #FEF08A; box-shadow:0 10px 25px rgba(0,0,0,0.05); display:flex; flex-direction:column; overflow:hidden; position:relative; }
+        #content-area { flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:clamp(1.5rem,4vw,3rem); gap:clamp(1.5rem,4vh,2.5rem); overflow:hidden; min-height:0; position:relative; }
+        .text-title { font-size:clamp(1.5rem,5vw,2.5rem); line-height:1.2; font-weight:800; }
+        .text-body { font-size:clamp(1rem,3vw,1.25rem); line-height:1.5; color:#374151; }
+        .text-icon { font-size:clamp(3.5rem,10vw,5rem); }
+        .animate-fade-in { animation:fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+        .animate-pop-in { animation:popIn 0.3s ease-out forwards; }
+        @keyframes popIn { 0%{opacity:0;transform:scale(0.9)} 100%{opacity:1;transform:scale(1)} }
+        .recording-pulse { animation:pulse-red 1.5s infinite; background-color:#EF4444!important; color:white!important; }
+        @keyframes pulse-red { 0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7)} 70%{box-shadow:0 0 0 15px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+        .audio-wave { display:flex; align-items:center; justify-content:center; gap:4px; height:100%; }
+        .audio-wave span { display:block; width:4px; background-color:#22C55E; border-radius:2px; animation:wave 1s infinite ease-in-out; }
+        .audio-wave span:nth-child(2){animation-delay:0.2s} .audio-wave span:nth-child(3){animation-delay:0.4s} .audio-wave span:nth-child(4){animation-delay:0.6s}
+        @keyframes wave { 0%,100%{height:30%} 50%{height:100%} }
+        #popup-overlay { background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); }
+        .control-btn { padding:clamp(0.5rem,2vw,0.75rem) clamp(1rem,3vw,1.5rem); border-radius:0.75rem; font-weight:700; font-size:clamp(0.875rem,2vw,1rem); display:flex; align-items:center; justify-content:center; transition:all 0.2s; white-space:nowrap; }
+        .item-btn { font-size:clamp(2rem,7vw,3.5rem); border-radius:1rem; border:3px solid transparent; transition:all 0.2s; padding:clamp(0.5rem,2vw,1rem); cursor:pointer; background:#F9FAFB; min-width:0; }
+        .item-btn.selected { border-color:#22C55E; background:#F0FDF4; box-shadow:0 0 0 3px rgba(34,197,94,0.2); }
+        .mission-box { background:#FEF9C3; border:2px solid #FDE047; border-radius:1rem; padding:clamp(0.75rem,2vw,1.25rem) clamp(1rem,3vw,1.75rem); width:100%; max-width:480px; }
+    </style>
+</head>
+<body>
+<div id="app-container">
+    <div id="lesson-view" class="lesson-card">
+        <div id="content-area"></div>
+        <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
+            <div id="progress-container" class="hidden w-full flex-col gap-1">
+                <div class="flex justify-end w-full leading-none">
+                    <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/5</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-1">
+                    <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev" class="invisible control-btn bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        <i class="ph ph-arrow-left mr-1"></i><span class="hidden sm:inline">Précédent</span>
+                    </button>
+                </div>
+                <button id="btn-next" class="control-btn bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 shadow-sm disabled:cursor-not-allowed">
+                    <span id="btn-next-text">Commencer</span><i class="ph ph-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+            <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+            <div id="popup-content" class="w-full flex flex-col items-center justify-center gap-5"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // ── 상수 ─────────────────────────────────────────────────────────────────────
+    const TOTAL_PAGES = 6; // 0:intro 1:mission 2:items 3:caissier 4:caisse 5:result
+
+    const BASE_44_ORIGIN = "https://coreeno.base44.app";
+    const CLOVA_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+
+    // ── 상태 ─────────────────────────────────────────────────────────────────────
+    let currentPage = 0;
+    let currentAudio = null;
+    let popupAudio = null;
+    let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+    let mediaRecorder, audioChunks = [], isRecording = false;
+
+    // 선택된 아이템 (Page 3)
+    let selectedItems = []; // emoji strings
+
+    // Case 추적
+    let caseHistory = [];          // 방문한 케이스 순서 e.g. ['case1','case2']
+    let case3UsedCount = 0;        // Case 3 사용 횟수 (전체 레슨에서 최대 2회)
+    let case1ExtraItems = [];      // Case 1에서 추가 선택한 아이템
+    let case2Visited = false;      // Case 2를 거쳤는지
+    let lastCaseBeforeCase4 = '';  // Case 4 진입 직전 케이스 (case1 or case2)
+
+    // Page 5 결과
+    let p5Results = { bag: false, receipt: false }; // 봉투(첫번째), 영수증(세번째)
+
+    // Page 5 preloaded audios (gesture context에서 생성)
+    let p5Audios = [];
+
+    // ── 유틸 ─────────────────────────────────────────────────────────────────────
+    function calcSimilarity(str1, str2) {
+        const s1 = (str1||"").replace(/[^가-힣a-zA-Z0-9]/g,'');
+        const s2 = (str2||"").replace(/[^가-힣a-zA-Z0-9]/g,'');
+        if(!s1.length && !s2.length) return 100;
+        if(!s1.length || !s2.length) return 0;
+        let costs = new Array(s2.length+1);
+        for(let i=0;i<=s1.length;i++){
+            let lv=i;
+            for(let j=0;j<=s2.length;j++){
+                if(i===0) costs[j]=j;
+                else if(j>0){
+                    let nv=costs[j-1];
+                    if(s1[i-1]!==s2[j-1]) nv=Math.min(Math.min(nv,lv),costs[j])+1;
+                    costs[j-1]=lv; lv=nv;
+                }
+            }
+            if(i>0) costs[s2.length]=lv;
+        }
+        return Math.max(0,(1-costs[s2.length]/Math.max(s1.length,s2.length))*100);
+    }
+
+    function matchBanana(text) {
+        const refs = ['바나나 더 있어요','바나나 있어요','이거 더 있어요'];
+        return refs.some(r => calcSimilarity(text, r) >= 80);
+    }
+    function matchCoffee(text) {
+        return calcSimilarity(text,'커피 있어요') >= 80;
+    }
+
+    async function initSynths() {
+        if (!correctSound) {
+            await Tone.start();
+            correctSound = new Tone.Synth().toDestination();
+            completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            transitionSynth = new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:0.01,decay:0.1,sustain:0,release:0.1}}).toDestination();
+            errorSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:0.05,decay:0.2,sustain:0.2,release:0.4}}).toDestination();
+        }
+    }
+
+    function stopAllMedia() {
+        if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();isRecording=false;}
+    }
+
+    function updateProgress() {
+        const container = document.getElementById('progress-container');
+        const bar = document.getElementById('progress-bar');
+        const text = document.getElementById('progress-text');
+        if(currentPage===0){container.classList.add('hidden');return;}
+        container.classList.remove('hidden');container.classList.add('flex');
+        const total=TOTAL_PAGES-1;
+        bar.style.width=`${(currentPage/total)*100}%`;
+        text.innerText=`${currentPage}/${total}`;
+    }
+
+    function loadPage(index) {
+        stopAllMedia();
+        document.getElementById('popup-overlay').classList.add('hidden');
+        document.getElementById('controls-area').classList.remove('hidden');
+        if(index===0) document.getElementById('btn-prev').classList.add('invisible');
+        else document.getElementById('btn-prev').classList.remove('invisible');
+        updateProgress();
+        document.getElementById('btn-next-text').innerText='Suivant';
+        document.getElementById('btn-next').disabled=false;
+        currentPage=index;
+        switch(index){
+            case 0: renderPage0(); break;
+            case 1: renderPage1(); break;
+            case 2: renderPage2(); break;
+            // page 3(caissier), 4(caisse), 5(result)는 popup 기반이므로 별도 진입
+        }
+    }
+
+    // ── PAGE 0: Intro ─────────────────────────────────────────────────────────────
+    function renderPage0() {
+        document.getElementById('content-area').innerHTML = `
+            <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-icon"></i></div>
+            <div class="flex flex-col items-center justify-center gap-2 w-full text-center">
+                <h3 class="text-[clamp(0.75rem,2vw,1rem)] text-gray-500 font-bold uppercase m-0 tracking-wide">Mission débutant - Aller au convenience store</h3>
+                <h1 class="text-title text-green-600 animate-fade-in m-0 leading-tight">Jeu de rôle : 세심한 구매<br><span class="text-gray-700">Achat méticuleux</span></h1>
+            </div>
+        `;
+        document.getElementById('btn-next-text').innerText='Commencer';
+    }
+
+    // ── PAGE 1: Mission brief ─────────────────────────────────────────────────────
+    function renderPage1() {
+        document.getElementById('content-area').innerHTML = `
+            <div class="flex flex-col items-center w-full max-w-lg animate-fade-in" style="gap:clamp(1rem,3vh,2rem)">
+                <h2 class="text-title text-green-600 m-0 text-center">Jeu de rôle : 세심한 구매<br><span class="text-gray-600 text-[0.85em]">Achat méticuleux</span></h2>
+                <div class="mission-box w-full text-center">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0 mb-2">Mission</p>
+                    <p class="text-body m-0 font-semibold text-gray-800">
+                        편의점에서 <span class="text-red-500 font-bold">[커피]</span>와 <span class="text-red-500 font-bold">[바나나 2개]</span>를 사야 합니다.<br>
+                        물건이 없으면 직원에게 문의하세요.<br>
+                        <span class="text-red-500 font-bold">[봉투]</span>와 <span class="text-red-500 font-bold">[영수증]</span>도 받으세요.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full">
+                    <button id="btn-understood" class="flex-1 control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm">
+                        <i class="ph ph-check mr-2"></i>J'ai compris, c'est parti !
+                    </button>
+                    <button id="btn-explain" class="flex-1 control-btn bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+                        <i class="ph ph-question mr-2"></i>Attends, je n'ai pas compris !
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('controls-area').classList.add('hidden');
+        document.getElementById('btn-understood').onclick = () => {
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            loadPage(2);
+        };
+        document.getElementById('btn-explain').onclick = () => {
+            document.getElementById('popup-content').innerHTML = `
+                <div class="text-4xl">🛒</div>
+                <p class="text-body text-center m-0 text-gray-700">Vous devez acheter un café et deux bananes dans un « 편의점 ». Si un article est manquant, demandez au caissier. Prenez un sac et le ticket de caisse.</p>
+                <button id="btn-explain-ok" class="control-btn bg-green-500 text-white hover:bg-green-600 w-full max-w-[200px]">OK <i class="ph ph-check ml-1"></i></button>
+            `;
+            document.getElementById('popup-overlay').classList.remove('hidden');
+            document.getElementById('btn-explain-ok').onclick = () => document.getElementById('popup-overlay').classList.add('hidden');
+            document.getElementById('btn-close-popup').onclick = () => document.getElementById('popup-overlay').classList.add('hidden');
+        };
+    }
+
+    // ── PAGE 2: 아이템 선택 ────────────────────────────────────────────────────────
+    function renderPage2() {
+        const items = ['🍌','🪥','🍰','🍱','🎩'];
+        document.getElementById('content-area').innerHTML = `
+            <div class="flex flex-col items-center animate-fade-in w-full max-w-lg" style="gap:clamp(1rem,3vh,2rem)">
+                <div class="mission-box text-center w-full">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0 mb-1">Mission</p>
+                    <p class="text-body font-semibold text-gray-800 m-0">Choisissez des articles à acheter.</p>
+                </div>
+                <div class="flex items-center justify-center gap-3 flex-wrap w-full">
+                    ${items.map(it=>`<button class="item-btn" data-item="${it}">${it}</button>`).join('')}
+                </div>
+                <div id="action-btn-area" class="w-full flex flex-col items-center gap-3" style="min-height:clamp(4rem,12vh,7rem)"></div>
+            </div>
+        `;
+        document.getElementById('controls-area').classList.add('hidden');
+
+        // 선택 상태 복원
+        selectedItems.forEach(it => {
+            const b = document.querySelector(`[data-item="${it}"]`);
+            if(b) b.classList.add('selected');
+        });
+        if(selectedItems.length>0) renderPage2Buttons();
+
+        document.querySelectorAll('.item-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.getAttribute('data-item');
+                if(btn.classList.contains('selected')){
+                    btn.classList.remove('selected');
+                    selectedItems = selectedItems.filter(i=>i!==item);
+                } else {
+                    btn.classList.add('selected');
+                    if(!selectedItems.includes(item)) selectedItems.push(item);
+                }
+                if(selectedItems.length>0) renderPage2Buttons();
+                else document.getElementById('action-btn-area').innerHTML='';
+            });
+        });
+    }
+
+    function renderPage2Buttons() {
+        document.getElementById('action-btn-area').innerHTML = `
+            <button id="btn-ask-caissier" class="bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                <i class="ph ph-chat-circle flex-shrink-0"></i><span>Je parle au caissier</span>
+            </button>
+            <button id="btn-go-caisse" class="bg-green-500 text-white hover:bg-green-600 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                <i class="ph ph-arrow-right flex-shrink-0"></i><span>Je vais passer à la caisse</span>
+            </button>
+        `;
+        document.getElementById('btn-ask-caissier').onclick = () => {
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            // Page 4 (caissier) 진입: gesture context에서 오디오 생성
+            enterCaissier(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3'));
+        };
+        document.getElementById('btn-go-caisse').onclick = () => {
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            // Page 5 (caisse) 진입: gesture context에서 오디오 미리 생성
+            const audios = [
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ];
+            enterCaisse(audios);
+        };
+    }
+
+    // ── PAGE 3: 카이시에 (직원 문의) ──────────────────────────────────────────────
+    // caissierAudio: gesture context에서 미리 생성된 Audio 객체
+    function enterCaissier(caissierAudio) {
+        currentPage = 3;
+        updateProgress();
+        document.getElementById('controls-area').classList.add('hidden');
+
+        // 팝업 열기: 직원 얼굴 + 오디오
+        showPopupCard({
+            visual: '🤓',
+            audio: caissierAudio,
+            onEnd: () => showCaissierSpeaking(null) // Case 4 아님, 일반 진입
+        });
+    }
+
+    // Case 4 재진입 (caissier popup 다시)
+    function enterCaissierCase4(fromCase) {
+        // fromCase: 'case1' or 'case2'
+        lastCaseBeforeCase4 = fromCase;
+        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3');
+        showPopupCard({
+            visual: '🤓',
+            audio: audio,
+            onEnd: () => showCaissierSpeaking(fromCase)
+        });
+    }
+
+    // 카이시에 speaking (fromCase: null=첫진입, 'case1', 'case2')
+    function showCaissierSpeaking(fromCase) {
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">…</h2>
+                <p class="text-base text-gray-500 m-0">Parlez au caissier</p>
+            </div>
+            <div class="flex items-center justify-center gap-5 w-full h-16">
+                <button id="btn-caissier-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                    <i class="ph-fill ph-microphone text-3xl"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-center min-h-[2rem] w-full">
+                <p id="caissier-status" class="text-sm font-bold text-gray-500 text-center w-full m-0">Appuyez sur le micro pour parler</p>
+            </div>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        document.getElementById('btn-caissier-record').onclick = () => {
+            toggleRecordCaissier(fromCase, document.getElementById('btn-caissier-record'));
+        };
+    }
+
+    async function toggleRecordCaissier(fromCase, btnEl) {
+        if(btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
+        if(isRecording){ stopRecording(); btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks=[];
+            mediaRecorder.ondataavailable = e=>{if(e.data.size>0) audioChunks.push(e.data);};
+            mediaRecorder.onstop = async()=>{
+                const blob=new Blob(audioChunks,{type:'audio/webm'});
+                stream.getTracks().forEach(t=>t.stop());
+                processCaissierAudio(blob, fromCase, btnEl);
+            };
+            mediaRecorder.start(); isRecording=true;
+            btnEl.classList.add('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-stop text-3xl"></i>`;
+            setTimeout(()=>{if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;}},6000);
+            const st=document.getElementById('caissier-status');
+            if(st){st.innerHTML=`<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`;st.className='text-red-500 w-full text-center m-0';}
+        } catch(err){alert("L'accès au microphone est requis.");}
+    }
+
+    async function processCaissierAudio(blob, fromCase, btnEl) {
+        const reader = new FileReader(); reader.readAsDataURL(blob);
+        reader.onloadend = async()=>{
+            const base64=reader.result.split(',')[1];
+            btnEl.classList.remove('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+            btnEl.disabled=true; btnEl.classList.add('pointer-events-none');
+
+            let recognized=''; let apiOk=false;
+            try {
+                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:'커피 있어요',assessment:false})});
+                if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
+            } catch(e){console.error(e);}
+
+            // 전사값 표기
+            const st=document.getElementById('caissier-status');
+            if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+
+            // 3초 후 케이스 판정
+            setTimeout(()=>{
+                if(!apiOk){
+                    // API 실패 시 Case 3으로
+                    handleCase3();
+                    return;
+                }
+                if(fromCase===null){
+                    // 첫 진입
+                    if(matchCoffee(recognized)){
+                        handleCase1();
+                    } else if(matchBanana(recognized)){
+                        handleCase2();
+                    } else {
+                        handleCase3();
+                    }
+                } else if(fromCase==='case1'){
+                    // Case 4, case1에서 온 경우: 바나나 일치면 Case 2
+                    if(matchBanana(recognized)){
+                        handleCase2();
+                    } else {
+                        handleCase3();
+                    }
+                } else if(fromCase==='case2'){
+                    // Case 4, case2에서 온 경우: 커피 일치면 Case 1
+                    if(matchCoffee(recognized)){
+                        handleCase1();
+                    } else {
+                        handleCase3();
+                    }
+                }
+            }, 3000);
+        };
+    }
+
+    // ── Case 핸들러 ──────────────────────────────────────────────────────────────
+
+    function handleCase1() {
+        caseHistory.push('case1');
+        // Case 1: 카드 오디오 + 추가 아이템 선택
+        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
+        showPopupCard({
+            visual: '🍷',
+            audio: audio,
+            onEnd: () => showCase1Items()
+        });
+    }
+
+    function showCase1Items() {
+        const items = ['🍷','☕️','🧦','🥤','☂️'];
+        const content = document.getElementById('popup-content');
+        let case1Selected = [...case1ExtraItems];
+
+        const renderItems = () => `
+            <div class="flex flex-col items-center gap-3 w-full">
+                <div class="flex items-center justify-center gap-2 flex-wrap w-full">
+                    ${items.map(it=>`<button class="item-btn${case1Selected.includes(it)?' selected':''}" data-c1item="${it}">${it}</button>`).join('')}
+                </div>
+                <div id="case1-action-area" class="w-full flex flex-col gap-2" style="min-height:clamp(4rem,12vh,7rem)">
+                    ${case1Selected.length>0?renderCase1Buttons():''}
+                </div>
+            </div>
+        `;
+        content.innerHTML = renderItems();
+
+        content.querySelectorAll('[data-c1item]').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                const item=btn.getAttribute('data-c1item');
+                if(btn.classList.contains('selected')){
+                    btn.classList.remove('selected');
+                    case1Selected=case1Selected.filter(i=>i!==item);
+                } else {
+                    btn.classList.add('selected');
+                    if(!case1Selected.includes(item)) case1Selected.push(item);
+                }
+                case1ExtraItems=[...case1Selected];
+                document.getElementById('case1-action-area').innerHTML=case1Selected.length>0?renderCase1Buttons():'';
+                if(case1Selected.length>0) bindCase1Buttons();
+            });
+        });
+        if(case1Selected.length>0) bindCase1Buttons();
+    }
+
+    function renderCase1Buttons() {
+        return `
+            <button id="btn-c1-another" class="bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                <i class="ph ph-chat-circle flex-shrink-0"></i><span>Je pose une autre question au caissier</span>
+            </button>
+            <button id="btn-c1-caisse" class="bg-green-500 text-white hover:bg-green-600 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                <i class="ph ph-arrow-right flex-shrink-0"></i><span>Je vais passer à la caisse</span>
+            </button>
+        `;
+    }
+
+    function bindCase1Buttons() {
+        const btnAnother=document.getElementById('btn-c1-another');
+        const btnCaisse=document.getElementById('btn-c1-caisse');
+        if(btnAnother) btnAnother.onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            enterCaissierCase4('case1');
+        };
+        if(btnCaisse) btnCaisse.onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            const audios=[
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ];
+            enterCaisse(audios);
+        };
+    }
+
+    function handleCase2() {
+        caseHistory.push('case2');
+        case2Visited = true;
+        // Case 2: 카드 + 두 버튼
+        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
+        showPopupCard({
+            visual: '🍌',
+            audio: audio,
+            onEnd: () => showCase2Buttons()
+        });
+    }
+
+    function showCase2Buttons() {
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="text-5xl">🍌</div>
+            <div class="flex flex-col gap-2 w-full">
+                <button id="btn-c2-another" class="bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                    <i class="ph ph-chat-circle flex-shrink-0"></i><span>Je pose une autre question au caissier</span>
+                </button>
+                <button id="btn-c2-caisse" class="bg-green-500 text-white hover:bg-green-600 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                    <i class="ph ph-arrow-right flex-shrink-0"></i><span>Je vais passer à la caisse</span>
+                </button>
+            </div>
+        `;
+        document.getElementById('btn-c2-another').onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            enterCaissierCase4('case2');
+        };
+        document.getElementById('btn-c2-caisse').onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            const audios=[
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ];
+            enterCaisse(audios);
+        };
+    }
+
+    function handleCase3() {
+        case3UsedCount++;
+        if(case3UsedCount > 2) {
+            // 2회 초과 시 Page 5로 자동 스킵
+            const audios=[
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ];
+            enterCaisse(audios);
+            return;
+        }
+        caseHistory.push('case3');
+        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3');
+        showPopupCard({
+            visual: '😅',
+            audio: audio,
+            onEnd: () => showCase3Speaking()
+        });
+    }
+
+    function showCase3Speaking() {
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">😅</h2>
+                <p class="text-base text-gray-500 m-0">Réessayez</p>
+            </div>
+            <div class="flex items-center justify-center gap-5 w-full h-16">
+                <button id="btn-case3-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                    <i class="ph-fill ph-microphone text-3xl"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-center min-h-[2rem] w-full">
+                <p id="case3-status" class="text-sm font-bold text-gray-500 text-center w-full m-0">Appuyez sur le micro pour parler</p>
+            </div>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        document.getElementById('btn-case3-record').onclick = () => {
+            toggleRecordCase3(document.getElementById('btn-case3-record'));
+        };
+    }
+
+    async function toggleRecordCase3(btnEl) {
+        if(btnEl.disabled||btnEl.classList.contains('pointer-events-none')) return;
+        if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;return;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        try {
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            mediaRecorder=new MediaRecorder(stream);
+            audioChunks=[];
+            mediaRecorder.ondataavailable=e=>{if(e.data.size>0) audioChunks.push(e.data);};
+            mediaRecorder.onstop=async()=>{
+                const blob=new Blob(audioChunks,{type:'audio/webm'});
+                stream.getTracks().forEach(t=>t.stop());
+                processCase3Audio(blob,btnEl);
+            };
+            mediaRecorder.start();isRecording=true;
+            btnEl.classList.add('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-stop text-3xl"></i>`;
+            setTimeout(()=>{if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;}},6000);
+            const st=document.getElementById('case3-status');
+            if(st){st.innerHTML=`<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`;st.className='text-red-500 w-full text-center m-0';}
+        } catch(err){alert("L'accès au microphone est requis.");}
+    }
+
+    async function processCase3Audio(blob, btnEl) {
+        const reader=new FileReader();reader.readAsDataURL(blob);
+        reader.onloadend=async()=>{
+            const base64=reader.result.split(',')[1];
+            btnEl.classList.remove('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+            btnEl.disabled=true;btnEl.classList.add('pointer-events-none');
+            let recognized='';let apiOk=false;
+            try{
+                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:'커피 있어요',assessment:false})});
+                if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
+            }catch(e){console.error(e);}
+            const st=document.getElementById('case3-status');
+            if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+            setTimeout(()=>{
+                if(matchCoffee(recognized)) handleCase1();
+                else if(matchBanana(recognized)) handleCase2();
+                else {
+                    // Case 3 재진입 불가 → Page 5로 스킵
+                    const audios=[
+                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+                    ];
+                    enterCaisse(audios);
+                }
+            }, 3000);
+        };
+    }
+
+    // ── PAGE 4 (caisse): 결제 시퀀스 ─────────────────────────────────────────────
+    // audios: gesture context에서 미리 생성된 Audio 배열 [bag, payment, receipt, bye]
+    function enterCaisse(audios) {
+        currentPage = 4;
+        updateProgress();
+        p5Audios = audios;
+        // 퀴즈 인덱스 0부터 시작
+        runCaisseQuiz(0, audios);
+    }
+
+    const CAISSE_QUIZZES = [
+        { visual:'🛍️', subtitle:null, reference:'네, 주세요', threshold:80, resultKey:'bag' },
+        { visual:'4,000 KRW 💰', subtitle:'Voici.', reference:'여기요', threshold:80, resultKey:null },
+        { visual:'🧾', subtitle:null, reference:'네, 주세요', threshold:80, resultKey:'receipt' },
+        { visual:'😄', subtitle:null, reference:null, resultKey:null } // 마지막: speaking 없음
+    ];
+
+    function runCaisseQuiz(idx, audios) {
+        if(idx >= CAISSE_QUIZZES.length){ showExitButton(); return; }
+        const quiz = CAISSE_QUIZZES[idx];
+        if(idx===3){
+            // 마지막 카드: 오디오 재생과 동시에 버튼 활성화 (speaking 없음)
+            showLastCaisseCard(audios[3]);
+            return;
+        }
+        showCaisseCard(quiz, idx, audios);
+    }
+
+    function showCaisseCard(quiz, idx, audios) {
+        showPopupCard({
+            visual: quiz.visual,
+            audio: audios[idx],
+            onEnd: () => showCaisseSpeaking(quiz, idx, audios)
+        });
+    }
+
+    function showCaisseSpeaking(quiz, idx, audios) {
+        const content = document.getElementById('popup-content');
+        const displayText = quiz.visual === '4,000 KRW 💰' ? '💳' : '_, ___.';
+        const subtitle = quiz.subtitle || (quiz.reference === '네, 주세요' ? 'Oui, s\'il vous plaît.' : '');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${displayText}</h2>
+                ${subtitle ? `<p class="text-base text-gray-500 m-0">${subtitle}</p>` : ''}
+            </div>
+            <div class="flex items-center justify-center gap-5 w-full h-16">
+                <button id="btn-caisse-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                    <i class="ph-fill ph-microphone text-3xl"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-center min-h-[2rem] w-full">
+                <p id="caisse-status" class="text-sm font-bold text-gray-500 text-center w-full m-0">Appuyez sur le micro pour parler</p>
+            </div>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        document.getElementById('btn-caisse-record').onclick = () => {
+            toggleRecordCaisse(quiz, idx, audios, document.getElementById('btn-caisse-record'));
+        };
+    }
+
+    async function toggleRecordCaisse(quiz, idx, audios, btnEl) {
+        if(btnEl.disabled||btnEl.classList.contains('pointer-events-none')) return;
+        if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;return;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        try {
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            mediaRecorder=new MediaRecorder(stream);
+            audioChunks=[];
+            mediaRecorder.ondataavailable=e=>{if(e.data.size>0) audioChunks.push(e.data);};
+            mediaRecorder.onstop=async()=>{
+                const blob=new Blob(audioChunks,{type:'audio/webm'});
+                stream.getTracks().forEach(t=>t.stop());
+                processCaisseAudio(blob,quiz,idx,audios,btnEl);
+            };
+            mediaRecorder.start();isRecording=true;
+            btnEl.classList.add('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-stop text-3xl"></i>`;
+            setTimeout(()=>{if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;}},6000);
+            const st=document.getElementById('caisse-status');
+            if(st){st.innerHTML=`<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`;st.className='text-red-500 w-full text-center m-0';}
+        } catch(err){alert("L'accès au microphone est requis.");}
+    }
+
+    async function processCaisseAudio(blob, quiz, idx, audios, btnEl) {
+        const reader=new FileReader();reader.readAsDataURL(blob);
+        reader.onloadend=async()=>{
+            const base64=reader.result.split(',')[1];
+            btnEl.classList.remove('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+            btnEl.disabled=true;btnEl.classList.add('pointer-events-none');
+            let recognized='';let apiOk=false;
+            try{
+                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:quiz.reference,assessment:false})});
+                if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
+            }catch(e){console.error(e);}
+            // 결과 저장
+            if(apiOk && quiz.resultKey){
+                const score=calcSimilarity(recognized,quiz.reference);
+                if(score>=quiz.threshold) p5Results[quiz.resultKey]=true;
+            }
+            // 전사값 표기
+            const st=document.getElementById('caisse-status');
+            if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+            // 1초 후 다음
+            setTimeout(()=>runCaisseQuiz(idx+1, audios), 1000);
+        };
+    }
+
+    function showLastCaisseCard(audio) {
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center flex-none">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">😄</h2>
+            </div>
+            <div class="flex items-center justify-center gap-4 w-full h-16 flex-none mt-4">
+                <div id="last-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <button id="btn-exit-store" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm w-full max-w-[280px] opacity-50 cursor-not-allowed" disabled>
+                <i class="ph ph-sign-out mr-2"></i>Sortir du magasin
+            </button>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        // 오디오 재생과 동시에 버튼 활성화
+        popupAudio = audio;
+        popupAudio.currentTime = 0;
+        popupAudio.play().catch(e=>console.log(e));
+        const btnExit = document.getElementById('btn-exit-store');
+        // 오디오 시작과 동시에 버튼 활성화
+        btnExit.disabled = false;
+        btnExit.classList.remove('opacity-50','cursor-not-allowed');
+        btnExit.onclick = () => {
+            document.getElementById('popup-overlay').classList.add('hidden');
+            loadPageResult();
+        };
+        popupAudio.onended = () => {
+            const wave = document.getElementById('last-wave');
+            if(wave) wave.classList.add('hidden');
+        };
+    }
+
+    function showExitButton() {
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-4 w-full text-center">
+                <div class="text-5xl">🚪</div>
+                <button id="btn-exit-store2" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm w-full max-w-[280px]">
+                    <i class="ph ph-sign-out mr-2"></i>Sortir du magasin
+                </button>
+            </div>
+        `;
+        document.getElementById('btn-exit-store2').onclick = () => {
+            document.getElementById('popup-overlay').classList.add('hidden');
+            loadPageResult();
+        };
+    }
+
+    // ── 공통 팝업 카드 (audio-only) ────────────────────────────────────────────────
+    function showPopupCard({visual, audio, onEnd}) {
+        const overlay = document.getElementById('popup-overlay');
+        overlay.classList.remove('hidden');
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        const content = document.getElementById('popup-content');
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center flex-none">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">${visual}</h2>
+            </div>
+            <div class="flex items-center justify-center gap-4 w-full h-16 flex-none mt-4">
+                <div id="card-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
+            </div>
+        `;
+        if(popupAudio){try{popupAudio.pause();}catch(e){} popupAudio=null;}
+        popupAudio = audio;
+        popupAudio.currentTime = 0;
+        popupAudio.play().catch(e=>console.log(e));
+        popupAudio.onended = () => {
+            const wave = document.getElementById('card-wave');
+            if(wave) wave.classList.add('hidden');
+            setTimeout(onEnd, 600);
+        };
+    }
+
+    // ── PAGE 5 (result) ───────────────────────────────────────────────────────────
+    function loadPageResult() {
+        stopAllMedia();
+        currentPage = 5;
+        updateProgress();
+        document.getElementById('popup-overlay').classList.add('hidden');
+        document.getElementById('controls-area').classList.add('hidden');
+
+        // 성공 집계
+        const bananaPAge3 = selectedItems.includes('🍌'); // Page 3에서 🍌 선택
+        const coffeeCase1 = case1ExtraItems.includes('☕️'); // Case 1에서 ☕️ 선택
+        const bananaCase2 = case2Visited;                    // Case 2를 거쳤으면
+        const bagSuccess = p5Results.bag;
+        const receiptSuccess = p5Results.receipt;
+
+        const items = [
+            { emoji:'☕️', success: coffeeCase1 },
+            { emoji:'🍌', success: bananaPAge3 },
+            { emoji:'🍌', success: bananaCase2 },
+            { emoji:'🛍️', success: bagSuccess },
+            { emoji:'🧾', success: receiptSuccess }
+        ];
+        const successCount = items.filter(i=>i.success).length;
+
+        let resultMsg = '';
+        if(successCount<=2) resultMsg='Beau travail. Tentez à nouveau peut-être ?';
+        else if(successCount<=4) resultMsg='C\'était pas mal ! Vous ferez encore mieux la prochaine fois.';
+        else resultMsg='Excellent ! Vous avez réussi toutes les missions !';
+
+        const itemsHtml = items.map(it=>`
+            <span class="text-[clamp(2rem,7vw,3rem)] ${it.success?'grayscale-0':'opacity-40'}" style="filter:${it.success?'none':'grayscale(1)'};">${it.emoji}</span>
+        `).join('');
+
+        // 초록/빨간 테두리
+        const detailHtml = items.map(it=>`
+            <span class="inline-flex items-center justify-center text-[clamp(1.5rem,5vw,2.5rem)] rounded-xl border-4 ${it.success?'border-green-400 bg-green-50':'border-red-300 bg-red-50'}" style="padding:clamp(0.3rem,1.5vw,0.6rem)">${it.emoji}</span>
+        `).join('');
+
+        document.getElementById('content-area').innerHTML = `
+            <div class="flex flex-col items-center gap-4 animate-pop-in w-full max-w-md text-center">
+                <div class="text-[clamp(2.5rem,8vw,4rem)]">${successCount===5?'🏆':successCount>=3?'🌟':'💪'}</div>
+                <div class="bg-white border-2 border-gray-100 rounded-2xl p-5 w-full flex flex-col gap-3">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0">Mission</p>
+                    <p class="text-body text-gray-700 m-0 text-sm">편의점에서 커피와 바나나 2개를 사야 합니다.<br>물건이 없으면 직원에게 문의하세요.<br>봉투와 영수증도 받으세요.</p>
+                    <div class="flex items-center justify-center gap-3 flex-wrap w-full mt-1">
+                        ${detailHtml}
+                    </div>
+                </div>
+                <div class="mission-box w-full text-center">
+                    <p class="text-body font-semibold text-yellow-800 m-0">${resultMsg}</p>
+                </div>
+            </div>
+        `;
+
+        if(successCount>=3){
+            if(completionSynth) completionSynth.triggerAttackRelease(["C5","E5","G5","C6"],"4n");
+        } else {
+            if(errorSynth){
+                const now=Tone.now();
+                errorSynth.triggerAttackRelease("A3","0.3s",now);
+                errorSynth.triggerAttackRelease("F3","0.3s",now+0.35);
+                errorSynth.triggerAttackRelease("D3","0.5s",now+0.7);
+            }
+        }
+        window.parent.postMessage({type:'lesson_complete'},'*');
+    }
+
+    function stopRecording() {
+        if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();isRecording=false;}
+    }
+
+    // ── 네비게이션 ────────────────────────────────────────────────────────────────
+    window.addEventListener('beforeunload', stopAllMedia);
+
+    document.getElementById('btn-next').addEventListener('click', async()=>{
+        if(currentPage===0){
+            await initSynths();
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            loadPage(1);
+            return;
+        }
+        if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+        loadPage(currentPage+1);
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', ()=>{
+        if(currentPage>0){
+            if(transitionSynth) transitionSynth.triggerAttackRelease('C5','0.05s');
+            loadPage(currentPage-1);
+        }
+    });
+
+    loadPage(0);
+</script>
+</body>
+</html>
