@@ -129,7 +129,6 @@
         </div>
 
         <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
-            <!-- 팝업: 높이를 고정하지 않고 요소의 간격에 맞게 자연스럽게 줄어들도록 설정 (Shrink-wrap) -->
             <div class="bg-white rounded-[2rem] shadow-2xl w-[90%] max-w-[420px] flex flex-col animate-pop-in relative border-[4px] border-yellow-400 p-[clamp(1.5rem,4vw,2rem)]">
                 <button id="btn-close-popup" class="absolute top-[clamp(0.75rem,2vw,1.25rem)] right-[clamp(0.75rem,2vw,1.25rem)] text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
                     <i class="ph ph-x text-[clamp(1.25rem,3vw,1.5rem)]"></i>
@@ -265,7 +264,6 @@
                     <div class="text-[clamp(1rem,3vw,1.25rem)] text-gray-700 max-w-2xl text-center animate-fade-in mt-4">${data.text}</div>
                 `;
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
-                // 복구 완료: lesson_complete 전송
                 setTimeout(() => window.parent.postMessage({ type: 'lesson_complete' }, '*'), 2000);
             } else if (data.type === 'text-only') {
                 document.getElementById('controls-area').classList.remove('hidden');
@@ -481,37 +479,111 @@
         }
 
         function evaluate(score, taskData, btnEl, statusEl, matchedAlt) {
-            const state = pageStates[currentIndex]; state.attemptsCount++;
-            const att = state.attemptsCount, isQuiz = taskData.type === 'speaking-quiz', isRepeat = !isQuiz && taskData.type === 'repeat-card';
+            const state = pageStates[currentIndex];
+            state.attemptsCount++;
+            const att = state.attemptsCount;
+            const isQuiz = taskData.type === 'speaking-quiz';
+            const isRepeat = !isQuiz && taskData.type === 'repeat-card';
+            
             btnEl.innerHTML = `<i class="ph-fill ph-microphone text-[clamp(1.5rem,6vw,2rem)] text-white"></i>`;
             btnEl.classList.remove('recording-pulse');
-            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`, baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
+            
+            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
+            const baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
+
             let threshold = matchedAlt && taskData.altAnswers ? taskData.altAnswers[0].threshold : taskData.threshold;
-            if (score >= threshold) {
-                state.isPassed = true; statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`; statusEl.className = baseClasses + 'text-green-500';
-                if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
-                if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
-                if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
-                finishTask(btnEl);
-            } else if (isQuiz && att < (taskData.maxAttempts || 3)) {
-                // 복구 완료: 오타 제거 (eine fois -> une fois)
-                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
-                if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                const hint = document.getElementById('quiz-hint'); if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
-            } else if (isRepeat && att === 1 && taskData.alwaysAttempt) {
-                // 복구 완료: 오타 제거 (eine fois -> une fois)
-                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
-                if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-            } else {
-                state.isPassed = true; statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`; statusEl.className = baseClasses + 'text-gray-500';
-                if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
-                if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
-                if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
-                finishTask(btnEl);
+
+            const triggerAutoPlay = () => {
+                setTimeout(() => {
+                    const btnPlay = document.getElementById('btn-play');
+                    const btnMainPlay = document.getElementById('btn-main-play');
+                    if (btnPlay) {
+                        btnPlay.click();
+                    } else if (btnMainPlay && lessonData[currentIndex].audio) {
+                        btnMainPlay.click();
+                    }
+                }, 800);
+            };
+
+            if (isRepeat) {
+                if (taskData.alwaysAttempt) {
+                    if (att === 1) {
+                        if (score >= threshold) {
+                            statusEl.innerHTML = `Très bien, essayons encore une fois.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-green-500';
+                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                        } else {
+                            statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-yellow-600';
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        }
+                        triggerAutoPlay();
+                    } else {
+                        state.isPassed = true;
+                        if (score >= threshold) {
+                            statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-green-500';
+                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                        } else {
+                            statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-gray-500';
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                        }
+                        finishTask(btnEl);
+                    }
+                } else if (taskData.strictPass) {
+                    if (score >= threshold) {
+                        state.isPassed = true;
+                        statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
+                        statusEl.className = baseClasses + 'text-green-500';
+                        if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                        finishTask(btnEl);
+                    } else {
+                        if (att === 1) {
+                            statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-yellow-600';
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                            triggerAutoPlay();
+                        } else {
+                            state.isPassed = true;
+                            statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
+                            statusEl.className = baseClasses + 'text-gray-500';
+                            if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                            finishTask(btnEl);
+                        }
+                    }
+                }
+            } else if (isQuiz) {
+                const maxAtt = taskData.maxAttempts || 3;
+                if (score >= threshold) {
+                    state.isPassed = true;
+                    statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
+                    statusEl.className = baseClasses + 'text-green-500';
+                    if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                    finishTask(btnEl);
+                    const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
+                    if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
+                    if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                } else if (att < maxAtt) {
+                    statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
+                    statusEl.className = baseClasses + 'text-yellow-600';
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    const hint = document.getElementById('quiz-hint');
+                    if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    triggerAutoPlay();
+                } else {
+                    state.isPassed = true;
+                    statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
+                    statusEl.className = baseClasses + 'text-gray-500';
+                    if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                    finishTask(btnEl);
+                    const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
+                    if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
+                    if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                }
             }
-            state.lastStatusHtml = statusEl.innerHTML; state.lastStatusClass = statusEl.className;
+            state.lastStatusHtml = statusEl.innerHTML;
+            state.lastStatusClass = statusEl.className;
         }
 
         function finishTask(btnEl) {
