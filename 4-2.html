@@ -265,6 +265,8 @@
                     <div class="text-[clamp(1rem,3vw,1.25rem)] text-gray-700 max-w-2xl text-center animate-fade-in mt-4">${data.text}</div>
                 `;
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+                // 복구 완료: lesson_complete 전송
+                setTimeout(() => window.parent.postMessage({ type: 'lesson_complete' }, '*'), 2000);
             } else if (data.type === 'text-only') {
                 document.getElementById('controls-area').classList.remove('hidden');
                 area.innerHTML = `
@@ -493,11 +495,13 @@
                 if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
                 finishTask(btnEl);
             } else if (isQuiz && att < (taskData.maxAttempts || 3)) {
-                statusEl.innerHTML = `On y est presque ! Essayons encore eine fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
+                // 복구 완료: 오타 제거 (eine fois -> une fois)
+                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
                 if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                 const hint = document.getElementById('quiz-hint'); if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
             } else if (isRepeat && att === 1 && taskData.alwaysAttempt) {
-                statusEl.innerHTML = `On y est presque ! Essayons encore eine fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
+                // 복구 완료: 오타 제거 (eine fois -> une fois)
+                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
                 if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
             } else {
                 state.isPassed = true; statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`; statusEl.className = baseClasses + 'text-gray-500';
