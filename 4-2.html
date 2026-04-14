@@ -150,8 +150,7 @@
             { id: 7, type: 'text-only', title: "직접 말하기", text: "Parlez-vous même en coréen en utilisant les phrases que vous avez apprises." },
             { id: 8, type: 'audio-speaking', mainHint: "신분증 좀 보여 주세요.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764041/4S-1_wr1zn4.mp3", popup: { type: 'speaking-quiz', consigne: null, hint: "voici", answer: "여기요.", reference: "여기요", threshold: 70, maxAttempts: 3 } },
             { id: 9, type: 'audio-speaking', mainHint: "", audio: null, popup: { type: 'speaking-quiz', consigne: "Demandez au caissier de recharger votre carte de transport.", hint: "교통 카드", answer: "교통 카드 충전도 해 주세요.", reference: "교통 카드 충전도 해 주세요", threshold: 60, maxAttempts: 3 } },
-            // altAnswers 속성을 유지하되 answer 표기를 통합하여 두 표현이 항상 함께 노출되도록 함
-            { id: 10, type: 'audio-speaking', mainHint: "얼마 충전해 드릴까요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3", popup: { type: 'speaking-quiz', consigne: "Demandez à recharger 10 000 wons.", hint: "10,000 = 만", answer: "만 원이요. / 만원 충전해 주세요", reference: "만 원이요|만원이요", threshold: 70, maxAttempts: 3, altAnswers: [{ reference: "만원 충전해 주세요", threshold: 80, displayAnswer: "만 원이요. / 만원 충전해 주세요" }] } },
+            { id: 10, type: 'audio-speaking', mainHint: "얼마 충전해 드릴까요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3", popup: { type: 'speaking-quiz', consigne: "Demandez à recharger 10 000 wons.", hint: "10,000 = 만", answer: "만 원이요. / 만원 충전해 주세요", reference: "만 원이요|만원이요", threshold: 70, maxAttempts: 3, altAnswers: [{ reference: "만원 충전해 주세요", threshold: 80 }] } },
             { id: 11, type: 'outro', title: "Félicitations !", text: "Vous avez enfin terminé la dernière séance orale de ce programme. Passez au dernier jeu de rôle pour tenir une conversation complète en coréen !" }
         ];
 
@@ -224,7 +223,6 @@
             if (currentIndex === 0 || currentIndex === lessonData.length - 1) container.classList.add('hidden');
             else {
                 container.classList.remove('hidden'); container.classList.add('flex');
-                // 4-2강 총 페이지 수에 맞게 분모를 10으로 설정
                 const total = 10; 
                 bar.style.width = `${(currentIndex / total) * 100}%`;
                 text.innerText = `${currentIndex}/${total}`;
@@ -233,7 +231,6 @@
 
         function loadPage(index) {
             stopAllMedia();
-            
             document.getElementById('popup-overlay').classList.add('hidden');
             document.getElementById('btn-popup-toggle').classList.add('invisible');
             document.getElementById('popup-content').innerHTML = ''; 
@@ -260,7 +257,6 @@
                 `;
                 document.getElementById('btn-next-text').innerText = data.buttonText;
                 nextBtn.disabled = false;
-                
             } else if (data.type === 'outro') {
                 document.getElementById('controls-area').classList.add('hidden');
                 area.innerHTML = `
@@ -269,8 +265,6 @@
                     <div class="text-[clamp(1rem,3vw,1.25rem)] text-gray-700 max-w-2xl text-center animate-fade-in mt-4">${data.text}</div>
                 `;
                 if (completionSynth) completionSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
-                setTimeout(() => window.parent.postMessage({ type: 'lesson_complete' }, '*'), 2000);
-                
             } else if (data.type === 'text-only') {
                 document.getElementById('controls-area').classList.remove('hidden');
                 area.innerHTML = `
@@ -282,7 +276,6 @@
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 nextBtn.disabled = false;
                 pageStates[index].isPassed = true;
-                
             } else if (data.type === 'repeat-card') {
                 document.getElementById('controls-area').classList.remove('hidden');
                 const state = pageStates[index];
@@ -290,7 +283,6 @@
                 const statusHtml = state.attemptsCount > 0 ? state.lastStatusHtml : (state.isPassed ? 'Très bien ! Passez à la suite.' : defaultStatus);
                 const statusClass = state.attemptsCount > 0 ? state.lastStatusClass : (state.isPassed ? 'text-green-500' : 'text-gray-500');
                 const isRecordDisabled = state.isPassed || state.attemptsCount >= data.maxAttempts;
-                
                 area.innerHTML = `
                     <div class="bg-white rounded-[2rem] shadow-sm w-[92%] max-w-[420px] flex flex-col items-center justify-center py-[clamp(1.5rem,4vh,2.5rem)] px-[clamp(1rem,4vw,2rem)] border-[4px] border-yellow-400 animate-pop-in mx-auto">
                         <div class="flex flex-col items-center gap-[clamp(0.5rem,1.5vh,1rem)] w-full text-center mb-[clamp(1rem,3vh,2rem)]">
@@ -310,14 +302,9 @@
                         </div>
                     </div>
                 `;
-                
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 nextBtn.disabled = false;
-                
-                const bPlay = document.getElementById('btn-play');
-                const bRecord = document.getElementById('btn-record');
-                const statusEl = document.getElementById('card-status');
-                
+                const bPlay = document.getElementById('btn-play'), bRecord = document.getElementById('btn-record'), statusEl = document.getElementById('card-status');
                 bPlay.onclick = () => {
                     if (isRecording) return;
                     if(bRecord && !isRecordDisabled) { bRecord.disabled = true; bRecord.classList.add('opacity-50', 'pointer-events-none'); }
@@ -336,7 +323,6 @@
                     state.audioPlayed = true;
                     setTimeout(() => bPlay.click(), 300);
                 }
-
             } else if (data.type === 'audio-speaking') {
                 document.getElementById('controls-area').classList.remove('hidden');
                 area.innerHTML = `
@@ -353,20 +339,14 @@
                         </div>
                     </div>
                 `;
-                
                 document.getElementById('btn-next-text').innerText = "Suivant";
                 nextBtn.disabled = true;
-
-                const btnMainPlay = document.getElementById('btn-main-play');
-                const btnToggleHint = document.getElementById('btn-toggle-hint');
-                const hintContainer = document.getElementById('hint-container');
-
+                const btnMainPlay = document.getElementById('btn-main-play'), btnToggleHint = document.getElementById('btn-toggle-hint'), hintContainer = document.getElementById('hint-container');
                 if (btnToggleHint) {
                     btnToggleHint.onclick = function() {
                         hintContainer.innerHTML = `<span class="text-gray-700 font-medium text-[clamp(1rem,3.5vw,1.125rem)] animate-fade-in px-4 text-center break-keep">${data.mainHint}</span>`;
                     };
                 }
-
                 const playAudioSequence = () => {
                     if (isRecording) return;
                     if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
@@ -418,12 +398,9 @@
             const isQuizLocked = !state.isPassed && state.attemptsCount < maxAttempts;
             const btnNextClass = isQuizLocked ? 'opacity-50 cursor-not-allowed' : '';
             const btnNextDisabled = isQuizLocked ? 'disabled' : '';
-
             let hintClass = (state.attemptsCount > 0 && !state.isPassed) || state.isPassed ? 'visible opacity-100' : 'invisible opacity-0';
             let answerClass = (state.isPassed || state.attemptsCount >= maxAttempts) ? 'visible opacity-100' : 'invisible opacity-0';
-            
             let consigneHtml = taskData.consigne ? `<div class="w-full text-center text-gray-800 font-bold text-[clamp(1rem,3.5vw,1.2rem)] min-h-[1.5em] flex items-center justify-center m-0 flex-none break-keep">${taskData.consigne}</div>` : '';
-
             content.innerHTML = `
                 <div class="flex flex-col w-full items-center justify-center gap-[clamp(0.75rem,3vh,1.25rem)] w-full">
                     ${consigneHtml}
@@ -444,24 +421,9 @@
                     </button>
                 </div>
             `;
-
-            const bRecord = document.getElementById('btn-popup-record');
-            const bNextPop = document.getElementById('btn-popup-next');
-            const bClose = document.getElementById('btn-close-popup');
-            const statusEl = document.getElementById('popup-status');
-
-            if(bNextPop) bNextPop.onclick = () => { 
-                document.getElementById('popup-overlay').classList.add('hidden'); 
-                const nextBtn = document.getElementById('btn-next');
-                nextBtn.disabled = false;
-                if (!state.isPassed) state.isSkipped = true;
-                nextBtn.click(); 
-            };
-            if(bClose) bClose.onclick = () => {
-                document.getElementById('popup-overlay').classList.add('hidden');
-                document.getElementById('btn-popup-toggle').classList.remove('invisible');
-                if (state.isPassed || state.attemptsCount >= maxAttempts) document.getElementById('btn-next').disabled = false;
-            };
+            const bRecord = document.getElementById('btn-popup-record'), bNextPop = document.getElementById('btn-popup-next'), bClose = document.getElementById('btn-close-popup'), statusEl = document.getElementById('popup-status');
+            if(bNextPop) bNextPop.onclick = () => { document.getElementById('popup-overlay').classList.add('hidden'); currentIndex++; loadPage(currentIndex); };
+            if(bClose) bClose.onclick = () => { document.getElementById('popup-overlay').classList.add('hidden'); document.getElementById('btn-popup-toggle').classList.remove('invisible'); if (state.isPassed || state.attemptsCount >= maxAttempts) document.getElementById('btn-next').disabled = false; };
             if(bRecord) bRecord.onclick = () => toggleRecording(taskData, bRecord, statusEl);
         }
 
@@ -489,28 +451,15 @@
         async function processAudio(blob, taskData, btnEl, statusEl) {
             const reader = new FileReader(); reader.readAsDataURL(blob);
             reader.onloadend = async () => {
-                const base64 = reader.result.split(',')[1];
-                const refs = taskData.reference.split('|');
-                let bestScore = 0;
-                let apiSuccess = false;
-                let matchedAlt = false;
-                
+                const base64 = reader.result.split(',')[1], refs = taskData.reference.split('|');
+                let bestScore = 0, apiSuccess = false, matchedAlt = false;
                 btnEl.innerHTML = `<i class="ph-fill ph-spinner-gap animate-spin text-[clamp(1.5rem,5vw,2rem)]"></i>`;
-                
                 for(const r of refs) {
                     try {
-                        const res = await fetch(CLOVA_API_FUNCTION_URL, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify({ audioBase64: base64, languageCode: "Kor", referenceText: r, assessment: false }) 
-                        });
+                        const res = await fetch(CLOVA_API_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioBase64: base64, languageCode: "Kor", referenceText: r, assessment: false }) });
                         if (res.ok) { 
-                            apiSuccess = true;
-                            const json = await res.json(); 
-                            const recognizedText = json.text || json.recognized || "";
-                            const sim = calculateSimilarity(recognizedText, r);
+                            apiSuccess = true; const json = await res.json(), recognizedText = json.text || json.recognized || "", sim = calculateSimilarity(recognizedText, r);
                             if(sim > bestScore) { bestScore = sim; matchedAlt = false; }
-                            
                             if (taskData.altAnswers) {
                                 for (const alt of taskData.altAnswers) {
                                     const altSim = calculateSimilarity(recognizedText, alt.reference);
@@ -520,81 +469,57 @@
                         }
                     } catch (e) { console.error("STT Error:", e); }
                 }
-                
                 if (!apiSuccess) {
-                    if (statusEl) {
-                        statusEl.innerHTML = "Erreur de connexion. Veuillez réessayer.";
-                        statusEl.className = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors text-red-500 flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em]';
-                    }
+                    if (statusEl) { statusEl.innerHTML = "Erreur de connexion. Veuillez réessayer."; statusEl.className = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors text-red-500 flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em]'; }
                     btnEl.innerHTML = `<i class="ph-fill ph-microphone text-[clamp(1.5rem,6vw,2rem)]"></i>`;
-                    btnEl.classList.remove('recording-pulse');
-                    btnEl.disabled = false; return; 
+                    btnEl.classList.remove('recording-pulse'); btnEl.disabled = false; return; 
                 }
                 evaluate(bestScore, taskData, btnEl, statusEl, matchedAlt);
             };
         }
 
         function evaluate(score, taskData, btnEl, statusEl, matchedAlt) {
-            const state = pageStates[currentIndex];
-            state.attemptsCount++;
-            const att = state.attemptsCount;
-            const isQuiz = taskData.type === 'speaking-quiz';
-            const isRepeat = !isQuiz && taskData.type === 'repeat-card';
-            
+            const state = pageStates[currentIndex]; state.attemptsCount++;
+            const att = state.attemptsCount, isQuiz = taskData.type === 'speaking-quiz', isRepeat = !isQuiz && taskData.type === 'repeat-card';
             btnEl.innerHTML = `<i class="ph-fill ph-microphone text-[clamp(1.5rem,6vw,2rem)] text-white"></i>`;
             btnEl.classList.remove('recording-pulse');
-            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
-            const baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
-
+            const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`, baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
             let threshold = matchedAlt && taskData.altAnswers ? taskData.altAnswers[0].threshold : taskData.threshold;
-
             if (score >= threshold) {
-                state.isPassed = true;
-                statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
-                statusEl.className = baseClasses + 'text-green-500';
+                state.isPassed = true; statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`; statusEl.className = baseClasses + 'text-green-500';
                 if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
                 const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
                 if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
                 if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
                 finishTask(btnEl);
             } else if (isQuiz && att < (taskData.maxAttempts || 3)) {
-                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
-                statusEl.className = baseClasses + 'text-yellow-600';
+                statusEl.innerHTML = `On y est presque ! Essayons encore eine fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
                 if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                const hint = document.getElementById('quiz-hint');
-                if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                const hint = document.getElementById('quiz-hint'); if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
             } else if (isRepeat && att === 1 && taskData.alwaysAttempt) {
-                statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
-                statusEl.className = baseClasses + 'text-yellow-600';
+                statusEl.innerHTML = `On y est presque ! Essayons encore eine fois.${scoreStr}`; statusEl.className = baseClasses + 'text-yellow-600';
                 if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
             } else {
-                state.isPassed = true;
-                statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
-                statusEl.className = baseClasses + 'text-gray-500';
+                state.isPassed = true; statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`; statusEl.className = baseClasses + 'text-gray-500';
                 if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                 const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
                 if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
                 if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
                 finishTask(btnEl);
             }
-            state.lastStatusHtml = statusEl.innerHTML;
-            state.lastStatusClass = statusEl.className;
+            state.lastStatusHtml = statusEl.innerHTML; state.lastStatusClass = statusEl.className;
         }
 
         function finishTask(btnEl) {
-            btnEl.disabled = true; 
-            btnEl.classList.replace('bg-green-500', 'bg-gray-300'); 
-            btnEl.classList.replace('hover:bg-green-600', 'bg-gray-300');
-            btnEl.classList.add('pointer-events-none'); 
-            const bNextPop = document.getElementById('btn-popup-next');
-            if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            btnEl.disabled = true; btnEl.classList.replace('bg-green-500', 'bg-gray-300'); btnEl.classList.replace('hover:bg-green-600', 'bg-gray-300'); btnEl.classList.add('pointer-events-none'); 
+            const bNextPop = document.getElementById('btn-popup-next'); if(bNextPop) { bNextPop.disabled = false; bNextPop.classList.remove('opacity-50', 'cursor-not-allowed'); }
         }
 
         window.addEventListener('beforeunload', stopAllMedia);
         window.addEventListener('pagehide', stopAllMedia);
         document.addEventListener('visibilitychange', () => { if (document.hidden) stopAllMedia(); });
-        document.getElementById('btn-next').addEventListener('click', async () => { if(currentIndex === 0) await initSynths(); currentIndex++; loadPage(currentIndex); });
-        document.getElementById('btn-prev').addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; loadPage(currentIndex); } });
+        document.getElementById('btn-next').addEventListener('click', async () => { if(currentIndex === 0) await initSynths(); if(transitionSynth) transitionSynth.triggerAttackRelease('E5', '0.05s'); currentIndex++; loadPage(currentIndex); });
+        document.getElementById('btn-prev').addEventListener('click', () => { if (currentIndex > 0) { if(transitionSynth) transitionSynth.triggerAttackRelease('C5', '0.05s'); currentIndex--; loadPage(currentIndex); } });
         document.getElementById('btn-popup-toggle').onclick = () => { const d = lessonData[currentIndex]; if(d.popup) showPopupSequence(d); };
 
         loadPage(0);
