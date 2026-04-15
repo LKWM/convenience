@@ -215,7 +215,7 @@
         document.getElementById('btn-explain').onclick = () => {
             document.getElementById('popup-content').innerHTML = `
                 <div class="text-4xl">🛒</div>
-                <p class="text-body text-center m-0 text-gray-700">Vous devez acheter un café et deux bananes dans un « 편의점 ». <br> Si un article est manquant, demandez au caissier. <br> Prenez un sac et le ticket de caisse.</p>
+                <p class="text-body text-center m-0 text-gray-700">Vous devez acheter un café et deux bananes dans un « 편의점 ». Si un article est manquant, demandez au caissier. Prenez un sac et le ticket de caisse.</p>
                 <button id="btn-explain-ok" class="control-btn bg-green-500 text-white hover:bg-green-600 w-full max-w-[200px]">OK <i class="ph ph-check ml-1"></i></button>
             `;
             document.getElementById('popup-overlay').classList.remove('hidden');
@@ -391,25 +391,22 @@
                     return;
                 }
                 if(fromCase===null){
-                    // 첫 진입
                     if(matchCoffee(recognized)){
-                        handleCase1();
+                        handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
                     } else if(matchBanana(recognized)){
                         handleCase2();
                     } else {
                         handleCase3();
                     }
                 } else if(fromCase==='case1'){
-                    // Case 4, case1에서 온 경우: 바나나 일치면 Case 2
                     if(matchBanana(recognized)){
                         handleCase2();
                     } else {
                         handleCase3();
                     }
                 } else if(fromCase==='case2'){
-                    // Case 4, case2에서 온 경우: 커피 일치면 Case 1
                     if(matchCoffee(recognized)){
-                        handleCase1();
+                        handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
                     } else {
                         handleCase3();
                     }
@@ -420,35 +417,49 @@
 
     // ── Case 핸들러 ──────────────────────────────────────────────────────────────
 
-    function handleCase1() {
+    function handleCase1(preloadedAudio) {
         caseHistory.push('case1');
-        // Case 1: 카드 오디오 + 추가 아이템 선택
-        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
-        showPopupCard({
-            visual: '🍷',
-            audio: audio,
-            onEnd: () => showCase1Items()
-        });
+        // preloadedAudio가 없으면 새로 생성 (gesture context에서만 호출됨)
+        const audio = preloadedAudio || new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
+        const overlay = document.getElementById('popup-overlay');
+        overlay.classList.remove('hidden');
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        const content = document.getElementById('popup-content');
+        // 오디오 재생과 동시에 이모지 + 아이템 선택 UI 표시
+        content.innerHTML = `
+            <div class="flex flex-col items-center gap-2 w-full text-center flex-none">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">😊</h2>
+            </div>
+            <div class="flex items-center justify-center gap-4 w-full h-10 flex-none">
+                <div id="c1-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <div id="c1-items-area" class="w-full flex flex-col items-center gap-3"></div>
+        `;
+        if(popupAudio){try{popupAudio.pause();}catch(e){} popupAudio=null;}
+        popupAudio = audio;
+        popupAudio.currentTime = 0;
+        popupAudio.play().catch(e=>console.log(e));
+        // 오디오 재생 시작과 동시에 아이템 렌더링
+        renderCase1ItemsInto(document.getElementById('c1-items-area'));
+        popupAudio.onended = () => {
+            const wave = document.getElementById('c1-wave');
+            if(wave) wave.classList.add('hidden');
+        };
     }
 
-    function showCase1Items() {
+    function renderCase1ItemsInto(container) {
         const items = ['🍷','☕️','🧦','🥤','☂️'];
-        const content = document.getElementById('popup-content');
         let case1Selected = [...case1ExtraItems];
-
-        const renderItems = () => `
-            <div class="flex flex-col items-center gap-3 w-full">
-                <div class="flex items-center justify-center gap-2 flex-wrap w-full">
-                    ${items.map(it=>`<button class="item-btn${case1Selected.includes(it)?' selected':''}" data-c1item="${it}">${it}</button>`).join('')}
-                </div>
-                <div id="case1-action-area" class="w-full flex flex-col gap-2" style="min-height:clamp(4rem,12vh,7rem)">
-                    ${case1Selected.length>0?renderCase1Buttons():''}
-                </div>
+        const renderHtml = () => `
+            <div class="flex items-center justify-center gap-2 flex-wrap w-full">
+                ${items.map(it=>`<button class="item-btn${case1Selected.includes(it)?' selected':''}" data-c1item="${it}">${it}</button>`).join('')}
+            </div>
+            <div id="case1-action-area" class="w-full flex flex-col gap-2" style="min-height:clamp(4rem,12vh,7rem)">
+                ${case1Selected.length>0?renderCase1Buttons():''}
             </div>
         `;
-        content.innerHTML = renderItems();
-
-        content.querySelectorAll('[data-c1item]').forEach(btn=>{
+        container.innerHTML = renderHtml();
+        container.querySelectorAll('[data-c1item]').forEach(btn=>{
             btn.addEventListener('click',()=>{
                 const item=btn.getAttribute('data-c1item');
                 if(btn.classList.contains('selected')){
@@ -620,7 +631,7 @@
             const st=document.getElementById('case3-status');
             if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
             setTimeout(()=>{
-                if(matchCoffee(recognized)) handleCase1();
+                if(matchCoffee(recognized)) handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
                 else if(matchBanana(recognized)) handleCase2();
                 else {
                     // Case 3 재진입 불가 → Page 5로 스킵
@@ -674,13 +685,14 @@
 
     function showCaisseSpeaking(quiz, idx, audios) {
         const content = document.getElementById('popup-content');
-        const displayText = quiz.visual === '4,000 KRW 💰' ? '💳' : '_, ___.';
-        const subtitle = quiz.subtitle || (quiz.reference === '네, 주세요' ? 'Oui, s\'il vous plaît.' : '');
+        // 실라버스에 명시된 경우만 표기: 2번째 카드(💳/Voici.)만 텍스트 있음
+        const isPayment = quiz.visual === '4,000 KRW 💰';
         content.innerHTML = `
+            ${isPayment ? `
             <div class="flex flex-col items-center gap-2 w-full text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">${displayText}</h2>
-                ${subtitle ? `<p class="text-base text-gray-500 m-0">${subtitle}</p>` : ''}
-            </div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0">💳</h2>
+                <p class="text-base text-gray-500 m-0">Voici.</p>
+            </div>` : ''}
             <div class="flex items-center justify-center gap-5 w-full h-16">
                 <button id="btn-caisse-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
                     <i class="ph-fill ph-microphone text-3xl"></i>
@@ -748,26 +760,19 @@
     function showLastCaisseCard(audio) {
         const content = document.getElementById('popup-content');
         content.innerHTML = `
-            <div class="flex flex-col items-center gap-2 w-full text-center flex-none">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">😄</h2>
-            </div>
-            <div class="flex items-center justify-center gap-4 w-full h-16 flex-none mt-4">
+            <div class="text-[clamp(4rem,15vw,6rem)] leading-none">😄</div>
+            <div class="flex items-center justify-center gap-4 w-full h-16">
                 <div id="last-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
             </div>
-            <button id="btn-exit-store" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm w-full max-w-[280px] opacity-50 cursor-not-allowed" disabled>
+            <button id="btn-exit-store" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm w-full max-w-[280px]">
                 <i class="ph ph-sign-out mr-2"></i>Sortir du magasin
             </button>
         `;
         document.getElementById('btn-close-popup').classList.add('invisible');
-        // 오디오 재생과 동시에 버튼 활성화
         popupAudio = audio;
         popupAudio.currentTime = 0;
         popupAudio.play().catch(e=>console.log(e));
-        const btnExit = document.getElementById('btn-exit-store');
-        // 오디오 시작과 동시에 버튼 활성화
-        btnExit.disabled = false;
-        btnExit.classList.remove('opacity-50','cursor-not-allowed');
-        btnExit.onclick = () => {
+        document.getElementById('btn-exit-store').onclick = () => {
             document.getElementById('popup-overlay').classList.add('hidden');
             loadPageResult();
         };
