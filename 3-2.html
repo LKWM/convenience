@@ -151,7 +151,7 @@
             { id: 9, type: 'audio-speaking', mainHint: "어서 오세요, 찾으시는 거 있으세요?", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1776061092/Ex-2_pexqmj.wav", popup: { type: 'speaking-quiz', consigne: "Demandez s’il y a du lait à la banane.", hint: "바나나 우유", answer: "바나나 우유 있어요?", reference: "바나나 우유 있어요", threshold: 70, maxAttempts: 3 } },
             { id: 10, type: 'audio-speaking', mainHint: "", audio: null, popup: { type: 'speaking-quiz', consigne: "Demandez s'il y en a plus.", hint: "plus = 더", answer: "이거 더 있어요?", reference: "이거 더 있어요", threshold: 70, maxAttempts: 3 } },
             { id: 11, type: 'audio-speaking', mainHint: "결제 도와드릴게요. 4000원입니다.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav", popup: { type: 'speaking-quiz', consigne: null, hint: "voici.", answer: "여기요.", reference: "여기요", threshold: 70, maxAttempts: 3 } },
-            { id: 12, type: 'audio-speaking', mainHint: "감사합니다, 안녕히 가세요.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3", popup: { type: 'speaking-quiz', consigne: null, hint: "Au revoir.", answer: "안녕히 계세요.", reference: "안녕히 계세요", threshold: 70, maxAttempts: 3 } },
+            { id: 12, type: 'audio-speaking', mainHint: "감사합니다, 안녕히 가세요.", audio: "https://res.cloudinary.com/de76i94ia/video/upload/v1774888032/S-3_w316i0.wav", popup: { type: 'speaking-quiz', consigne: null, hint: "Au revoir.", answer: "안녕히 계세요.", reference: "안녕히 계세요", threshold: 70, maxAttempts: 3 } },
             { id: 13, type: 'outro', title: "Bon travail !", text: "Vous avez pratiqué toutes les phrases apprises dans les chapitres 1 à 3. Passez au jeu de rôle et tenez une conversation en coréen !" }
         ];
 
@@ -513,7 +513,7 @@
                         if (score >= threshold) {
                             statusEl.innerHTML = `Très bien, essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-green-500';
-                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                            // 완료 전이므로 성공 효과음 재생 안 함
                         } else {
                             statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-yellow-600';
