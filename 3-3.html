@@ -192,9 +192,9 @@
                 <div class="mission-box w-full text-center">
                     <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0 mb-2">Mission</p>
                     <p class="text-body m-0 font-semibold text-gray-800">
-                        편의점에서 <span class="text-red-500 font-bold">[커피]</span>와 <span class="text-red-500 font-bold">[바나나 2개]</span>를 사야 합니다.<br>
+                        편의점에서 <span class="text-red-500 font-bold">커피</span>와 <span class="text-red-500 font-bold">바나나 2개</span>를 사야 합니다.<br>
                         물건이 없으면 직원에게 문의하세요.<br>
-                        <span class="text-red-500 font-bold">[봉투]</span>와 <span class="text-red-500 font-bold">[영수증]</span>도 받으세요.
+                        <span class="text-red-500 font-bold">봉투</span>와 <span class="text-red-500 font-bold">영수증</span>도 받으세요.
                     </p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
@@ -215,7 +215,7 @@
         document.getElementById('btn-explain').onclick = () => {
             document.getElementById('popup-content').innerHTML = `
                 <div class="text-4xl">🛒</div>
-                <p class="text-body text-center m-0 text-gray-700">Vous devez acheter un café et deux bananes dans un « 편의점 ». Si un article est manquant, demandez au caissier. Prenez un sac et le ticket de caisse.</p>
+                <p class="text-body text-center m-0 text-gray-700">Vous devez acheter un café et deux bananes dans un « 편의점 ». <br> Si un article est manquant, demandez au caissier. <br> Prenez un sac et le ticket de caisse.</p>
                 <button id="btn-explain-ok" class="control-btn bg-green-500 text-white hover:bg-green-600 w-full max-w-[200px]">OK <i class="ph ph-check ml-1"></i></button>
             `;
             document.getElementById('popup-overlay').classList.remove('hidden');
