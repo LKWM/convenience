@@ -511,7 +511,7 @@
                         if (score >= threshold) {
                             statusEl.innerHTML = `Très bien, essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-green-500';
-                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                            // 완료 전이므로 성공 효과음 재생 안 함
                         } else {
                             statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-yellow-600';
@@ -560,10 +560,13 @@
                     statusEl.innerHTML = `Très bien ! Passez à la suite.${scoreStr}`;
                     statusEl.className = baseClasses + 'text-green-500';
                     if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
-                    finishTask(btnEl);
-                    const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
+                    
+                    const ans = document.getElementById('quiz-answer');
                     if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
+                    const hint = document.getElementById('quiz-hint');
                     if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    
+                    finishTask(btnEl);
                 } else if (att < maxAtt) {
                     statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
                     statusEl.className = baseClasses + 'text-yellow-600';
@@ -576,12 +579,16 @@
                     statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
                     statusEl.className = baseClasses + 'text-gray-500';
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
-                    finishTask(btnEl);
-                    const ans = document.getElementById('quiz-answer'), hint = document.getElementById('quiz-hint');
+                    
+                    const ans = document.getElementById('quiz-answer');
                     if(ans) { ans.classList.remove('invisible', 'opacity-0'); ans.classList.add('visible', 'opacity-100'); }
+                    const hint = document.getElementById('quiz-hint');
                     if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    
+                    finishTask(btnEl);
                 }
             }
+            
             state.lastStatusHtml = statusEl.innerHTML;
             state.lastStatusClass = statusEl.className;
         }
