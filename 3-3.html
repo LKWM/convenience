@@ -306,11 +306,10 @@
         });
     }
 
-    // Case 4 재진입 (caissier popup 다시)
-    function enterCaissierCase4(fromCase) {
-        // fromCase: 'case1' or 'case2'
+    // Case 4 재진입 (caissier popup 다시) — caissierAudio: gesture context에서 미리 생성
+    function enterCaissierCase4(fromCase, caissierAudio) {
         lastCaseBeforeCase4 = fromCase;
-        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3');
+        const audio = caissierAudio || new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3');
         showPopupCard({
             visual: '🤓',
             audio: audio,
@@ -345,6 +344,20 @@
         if(btnEl.disabled || btnEl.classList.contains('pointer-events-none')) return;
         if(isRecording){ stopRecording(); btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`; return; }
         if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+
+        // gesture context에서 분기별 오디오를 모두 미리 생성
+        const nextAudios = {
+            case1: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            case2: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            case3: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3'),
+            caisse: [
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ]
+        };
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({audio:true});
             mediaRecorder = new MediaRecorder(stream);
@@ -353,7 +366,7 @@
             mediaRecorder.onstop = async()=>{
                 const blob=new Blob(audioChunks,{type:'audio/webm'});
                 stream.getTracks().forEach(t=>t.stop());
-                processCaissierAudio(blob, fromCase, btnEl);
+                processCaissierAudio(blob, fromCase, btnEl, nextAudios);
             };
             mediaRecorder.start(); isRecording=true;
             btnEl.classList.add('recording-pulse');
@@ -364,7 +377,7 @@
         } catch(err){alert("L'accès au microphone est requis.");}
     }
 
-    async function processCaissierAudio(blob, fromCase, btnEl) {
+    async function processCaissierAudio(blob, fromCase, btnEl, nextAudios) {
         const reader = new FileReader(); reader.readAsDataURL(blob);
         reader.onloadend = async()=>{
             const base64=reader.result.split(',')[1];
@@ -379,37 +392,24 @@
                 if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
             } catch(e){console.error(e);}
 
-            // 전사값 표기
             const st=document.getElementById('caissier-status');
             if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
 
-            // 3초 후 케이스 판정
+            // 3초 후 케이스 판정 — 미리 생성된 오디오 사용
             setTimeout(()=>{
                 if(!apiOk){
-                    // API 실패 시 Case 3으로
-                    handleCase3();
-                    return;
+                    handleCase3(nextAudios.case3, nextAudios.caisse); return;
                 }
                 if(fromCase===null){
-                    if(matchCoffee(recognized)){
-                        handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
-                    } else if(matchBanana(recognized)){
-                        handleCase2();
-                    } else {
-                        handleCase3();
-                    }
+                    if(matchCoffee(recognized))       handleCase1(nextAudios.case1);
+                    else if(matchBanana(recognized))  handleCase2(nextAudios.case2, nextAudios.caisse);
+                    else                              handleCase3(nextAudios.case3, nextAudios.caisse);
                 } else if(fromCase==='case1'){
-                    if(matchBanana(recognized)){
-                        handleCase2();
-                    } else {
-                        handleCase3();
-                    }
+                    if(matchBanana(recognized))       handleCase2(nextAudios.case2, nextAudios.caisse);
+                    else                              handleCase3(nextAudios.case3, nextAudios.caisse);
                 } else if(fromCase==='case2'){
-                    if(matchCoffee(recognized)){
-                        handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
-                    } else {
-                        handleCase3();
-                    }
+                    if(matchCoffee(recognized))       handleCase1(nextAudios.case1);
+                    else                              handleCase3(nextAudios.case3, nextAudios.caisse);
                 }
             }, 3000);
         };
@@ -428,7 +428,7 @@
         // 오디오 재생과 동시에 이모지 + 아이템 선택 UI 표시
         content.innerHTML = `
             <div class="flex flex-col items-center gap-2 w-full text-center flex-none">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">😊</h2>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full">🍷</h2>
             </div>
             <div class="flex items-center justify-center gap-4 w-full h-10 flex-none">
                 <div id="c1-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
@@ -493,7 +493,9 @@
         const btnCaisse=document.getElementById('btn-c1-caisse');
         if(btnAnother) btnAnother.onclick=()=>{
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
-            enterCaissierCase4('case1');
+            enterCaissierCase4('case1',
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3')
+            );
         };
         if(btnCaisse) btnCaisse.onclick=()=>{
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
@@ -507,19 +509,18 @@
         };
     }
 
-    function handleCase2() {
+    function handleCase2(preloadedAudio, caisseAudios) {
         caseHistory.push('case2');
         case2Visited = true;
-        // Case 2: 카드 + 두 버튼
-        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
+        const audio = preloadedAudio || new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3');
         showPopupCard({
             visual: '🍌',
             audio: audio,
-            onEnd: () => showCase2Buttons()
+            onEnd: () => showCase2Buttons(caisseAudios)
         });
     }
 
-    function showCase2Buttons() {
+    function showCase2Buttons(caisseAudios) {
         const content = document.getElementById('popup-content');
         content.innerHTML = `
             <div class="text-5xl">🍌</div>
@@ -534,11 +535,14 @@
         `;
         document.getElementById('btn-c2-another').onclick=()=>{
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
-            enterCaissierCase4('case2');
+            // gesture context에서 오디오 생성
+            enterCaissierCase4('case2',
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775586049/S3-1_zjos8x.mp3')
+            );
         };
         document.getElementById('btn-c2-caisse').onclick=()=>{
             if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
-            const audios=[
+            const audios = caisseAudios || [
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
@@ -548,11 +552,10 @@
         };
     }
 
-    function handleCase3() {
+    function handleCase3(preloadedAudio, caisseAudios) {
         case3UsedCount++;
         if(case3UsedCount > 2) {
-            // 2회 초과 시 Page 5로 자동 스킵
-            const audios=[
+            const audios = caisseAudios || [
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
@@ -562,7 +565,7 @@
             return;
         }
         caseHistory.push('case3');
-        const audio = new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3');
+        const audio = preloadedAudio || new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3');
         showPopupCard({
             visual: '😅',
             audio: audio,
@@ -596,6 +599,19 @@
         if(btnEl.disabled||btnEl.classList.contains('pointer-events-none')) return;
         if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;return;}
         if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+
+        // gesture context에서 분기별 오디오 미리 생성
+        const nextAudios = {
+            case1: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            case2: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            caisse: [
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
+                new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
+            ]
+        };
+
         try {
             const stream=await navigator.mediaDevices.getUserMedia({audio:true});
             mediaRecorder=new MediaRecorder(stream);
@@ -604,7 +620,7 @@
             mediaRecorder.onstop=async()=>{
                 const blob=new Blob(audioChunks,{type:'audio/webm'});
                 stream.getTracks().forEach(t=>t.stop());
-                processCase3Audio(blob,btnEl);
+                processCase3Audio(blob, btnEl, nextAudios);
             };
             mediaRecorder.start();isRecording=true;
             btnEl.classList.add('recording-pulse');
@@ -615,7 +631,7 @@
         } catch(err){alert("L'accès au microphone est requis.");}
     }
 
-    async function processCase3Audio(blob, btnEl) {
+    async function processCase3Audio(blob, btnEl, nextAudios) {
         const reader=new FileReader();reader.readAsDataURL(blob);
         reader.onloadend=async()=>{
             const base64=reader.result.split(',')[1];
@@ -630,19 +646,11 @@
             }catch(e){console.error(e);}
             const st=document.getElementById('case3-status');
             if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+            // 3초 후 — 미리 생성된 오디오 사용
             setTimeout(()=>{
-                if(matchCoffee(recognized)) handleCase1(new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'));
-                else if(matchBanana(recognized)) handleCase2();
-                else {
-                    // Case 3 재진입 불가 → Page 5로 스킵
-                    const audios=[
-                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
-                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
-                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3'),
-                        new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3')
-                    ];
-                    enterCaisse(audios);
-                }
+                if(matchCoffee(recognized))      handleCase1(nextAudios.case1);
+                else if(matchBanana(recognized)) handleCase2(nextAudios.case2, nextAudios.caisse);
+                else                             enterCaisse(nextAudios.caisse);
             }, 3000);
         };
     }
