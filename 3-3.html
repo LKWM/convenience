@@ -85,7 +85,7 @@
 
     // Case 추적
     let caseHistory = [];          // 방문한 케이스 순서 e.g. ['case1','case2']
-    let case3UsedCount = 0;        // Case 3 사용 횟수 (전체 레슨에서 최대 2회)
+    let case3UsedCount = 0;        // Case 3 사용 횟수 (전체 레슨에서 최대 3회)
     let case1ExtraItems = [];      // Case 1에서 추가 선택한 아이템
     let case2Visited = false;      // Case 2를 거쳤는지
     let lastCaseBeforeCase4 = '';  // Case 4 진입 직전 케이스 (case1 or case2)
@@ -348,7 +348,7 @@
         // gesture context에서 분기별 오디오를 모두 미리 생성
         const nextAudios = {
             case1: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
-            case2: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            case2: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case2_b9tt7j.mp3'),
             case3: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3'),
             caisse: [
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
@@ -554,7 +554,7 @@
 
     function handleCase3(preloadedAudio, caisseAudios) {
         case3UsedCount++;
-        if(case3UsedCount > 2) {
+        if(case3UsedCount > 3) {
             const audios = caisseAudios || [
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
@@ -604,6 +604,7 @@
         const nextAudios = {
             case1: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
             case2: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184779/case_1_szrkdr.mp3'),
+            case3: new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3'),
             caisse: [
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1775292487/2-S4_lidwt2.mp3'),
                 new Audio('https://res.cloudinary.com/de76i94ia/video/upload/v1776023605/Ex-1_ivvh73.wav'),
@@ -650,7 +651,7 @@
             setTimeout(()=>{
                 if(matchCoffee(recognized))      handleCase1(nextAudios.case1);
                 else if(matchBanana(recognized)) handleCase2(nextAudios.case2, nextAudios.caisse);
-                else                             enterCaisse(nextAudios.caisse);
+                else                             handleCase3(nextAudios.case3, nextAudios.caisse);
             }, 3000);
         };
     }
