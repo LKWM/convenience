@@ -601,18 +601,31 @@
             const scoreStr = `<br><span class="text-xs text-gray-400 font-normal mt-1 block">(Score: ${Math.round(score)})</span>`;
             const baseClasses = 'text-[clamp(0.875rem,3.5vw,1rem)] font-bold text-center w-full transition-colors flex flex-col justify-center items-center leading-tight m-0 min-h-[1.5em] ';
 
+            const triggerAutoPlay = () => {
+                setTimeout(() => {
+                    const btnPlay = document.getElementById('btn-play');
+                    const btnMainPlay = document.getElementById('btn-main-play');
+                    if (btnPlay) {
+                        btnPlay.click();
+                    } else if (btnMainPlay && lessonData[currentIndex].audio) {
+                        btnMainPlay.click();
+                    }
+                }, 800);
+            };
+
             if (isRepeat) {
                 if (taskData.alwaysAttempt) {
                     if (att === 1) {
                         if (score >= taskData.threshold) {
                             statusEl.innerHTML = `Très bien, essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-green-500';
-                            if(successSynth) successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+                            // 완료 전이므로 성공 효과음 재생 안 함
                         } else {
                             statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-yellow-600';
                             if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                         }
+                        triggerAutoPlay();
                     } else {
                         state.isPassed = true;
                         if (score >= taskData.threshold) {
@@ -638,6 +651,7 @@
                             statusEl.innerHTML = `On y est presque ! Essayons encore une fois.${scoreStr}`;
                             statusEl.className = baseClasses + 'text-yellow-600';
                             if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
+                            triggerAutoPlay();
                         } else {
                             state.isPassed = true;
                             statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
@@ -668,6 +682,7 @@
                     if(errorSynth) errorSynth.triggerAttackRelease("D3", "0.2s");
                     const hint = document.getElementById('quiz-hint');
                     if(hint) { hint.classList.remove('invisible', 'opacity-0'); hint.classList.add('visible', 'opacity-100'); }
+                    triggerAutoPlay();
                 } else {
                     state.isPassed = true;
                     statusEl.innerHTML = `Bien essayé ! Passez à la suite.${scoreStr}`;
