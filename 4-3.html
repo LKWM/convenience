@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mission débutant - Jeu de rôle : 편의점 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#FEFCE8;touch-action:none;font-family:'Inter','Noto Sans',sans-serif;color:#1F2937;}
+        #app-container{width:100vw;height:100dvh;padding:clamp(10px,3vh,2rem);box-sizing:border-box;display:flex;justify-content:center;align-items:center;}
+        .lesson-card{width:100%;max-width:800px;height:100%;background:white;border-radius:1.5rem;border:2px solid #FEF08A;box-shadow:0 10px 25px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+        #content-area{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(1.5rem,4vw,3rem);gap:clamp(1.5rem,4vh,2.5rem);overflow:hidden;min-height:0;position:relative;}
+        .text-title{font-size:clamp(1.5rem,5vw,2.5rem);line-height:1.2;font-weight:800;}
+        .text-body{font-size:clamp(1rem,3vw,1.25rem);line-height:1.5;color:#374151;}
+        .text-icon{font-size:clamp(3.5rem,10vw,5rem);}
+        .animate-fade-in{animation:fadeIn 0.4s ease-out forwards;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        .animate-pop-in{animation:popIn 0.3s ease-out forwards;}
+        @keyframes popIn{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}
+        .recording-pulse{animation:pulse-red 1.5s infinite;background-color:#EF4444!important;color:white!important;}
+        @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7)}70%{box-shadow:0 0 0 15px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+        .audio-wave{display:flex;align-items:center;justify-content:center;gap:4px;height:100%;}
+        .audio-wave span{display:block;width:4px;background-color:#22C55E;border-radius:2px;animation:wave 1s infinite ease-in-out;}
+        .audio-wave span:nth-child(2){animation-delay:0.2s}.audio-wave span:nth-child(3){animation-delay:0.4s}.audio-wave span:nth-child(4){animation-delay:0.6s}
+        @keyframes wave{0%,100%{height:30%}50%{height:100%}}
+        #popup-overlay{background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);}
+        .control-btn{padding:clamp(0.5rem,2vw,0.75rem) clamp(1rem,3vw,1.5rem);border-radius:0.75rem;font-weight:700;font-size:clamp(0.875rem,2vw,1rem);display:flex;align-items:center;justify-content:center;transition:all 0.2s;white-space:nowrap;}
+        .item-btn{font-size:clamp(2rem,7vw,3.5rem);border-radius:1rem;border:3px solid transparent;transition:all 0.2s;padding:clamp(0.5rem,2vw,1rem);cursor:pointer;background:#F9FAFB;min-width:0;}
+        .item-btn.selected{border-color:#22C55E;background:#F0FDF4;box-shadow:0 0 0 3px rgba(34,197,94,0.2);}
+        .mission-box{background:#FEF9C3;border:2px solid #FDE047;border-radius:1rem;padding:clamp(0.75rem,2vw,1.25rem) clamp(1rem,3vw,1.75rem);width:100%;max-width:480px;}
+    </style>
+</head>
+<body>
+<div id="app-container">
+    <div id="lesson-view" class="lesson-card">
+        <div id="content-area"></div>
+        <div id="controls-area" class="w-full flex-none border-t border-gray-100 bg-white px-6 py-6 flex flex-col justify-center gap-3 z-10 relative">
+            <div id="progress-container" class="hidden w-full flex-col gap-1">
+                <div class="flex justify-end w-full leading-none">
+                    <span id="progress-text" class="text-[10px] text-gray-400 font-bold tracking-wider m-0 leading-none">1/4</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-1">
+                    <div id="progress-bar" class="bg-green-500 h-1 rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev" class="invisible control-btn bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        <i class="ph ph-arrow-left mr-1"></i><span class="hidden sm:inline">Précédent</span>
+                    </button>
+                </div>
+                <button id="btn-next" class="control-btn bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 shadow-sm disabled:cursor-not-allowed">
+                    <span id="btn-next-text">Commencer</span><i class="ph ph-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="popup-overlay" class="absolute inset-0 z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] flex flex-col animate-pop-in relative border-4 border-yellow-400 p-6 md:p-8">
+            <button id="btn-close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 leading-none z-10">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+            <div id="popup-content" class="w-full flex flex-col items-center justify-center gap-5"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // ── 상수 ─────────────────────────────────────────────────────────────────────
+    const TOTAL_PAGES = 5; // 0:intro 1:mission 2:items 3:convo 4:result
+    const BASE_44_ORIGIN = "https://coreeno.base44.app";
+    const CLOVA_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+
+    const AUDIO_URLS = {
+        c1:   'https://res.cloudinary.com/de76i94ia/video/upload/v1775764041/4S-1_wr1zn4.mp3',
+        c22:  'https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3',
+        c3:   'https://res.cloudinary.com/de76i94ia/video/upload/v1776247380/Jeu_1_iqkodc.wav',
+        c4:   'https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3',
+        c5:   'https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3'
+    };
+
+    // ── 상태 ─────────────────────────────────────────────────────────────────────
+    let currentPage = 0;
+    let currentAudio = null;
+    let popupAudio = null;
+    let correctSound, completionSynth, transitionSynth, successSynth, errorSynth;
+    let mediaRecorder, audioChunks = [], isRecording = false;
+
+    let selectedItems = [];
+
+    // 결과 추적
+    let results = {
+        chicken: false,   // Page 3에서 🍗 선택
+        beer: false,      // Page 3에서 🍺 AND Convo 1 통과
+        transport: false, // Convo 2-1 통과 OR 2-2 통과
+        noReceipt: false, // Convo 4 통과
+        bye: false        // Convo 5 통과
+    };
+    // Convo 중간 상태
+    let convo1Passed = false;
+    let convo21Result = null; // 'full' | 'partial' | 'fail'
+
+    // ── 유틸 ─────────────────────────────────────────────────────────────────────
+    function calcSim(s1, s2) {
+        s1 = (s1||"").replace(/[^가-힣a-zA-Z0-9]/g,'');
+        s2 = (s2||"").replace(/[^가-힣a-zA-Z0-9]/g,'');
+        if(!s1.length && !s2.length) return 100;
+        if(!s1.length || !s2.length) return 0;
+        let costs = new Array(s2.length+1);
+        for(let i=0;i<=s1.length;i++){
+            let lv=i;
+            for(let j=0;j<=s2.length;j++){
+                if(i===0) costs[j]=j;
+                else if(j>0){
+                    let nv=costs[j-1];
+                    if(s1[i-1]!==s2[j-1]) nv=Math.min(Math.min(nv,lv),costs[j])+1;
+                    costs[j-1]=lv; lv=nv;
+                }
+            }
+            if(i>0) costs[s2.length]=lv;
+        }
+        return Math.max(0,(1-costs[s2.length]/Math.max(s1.length,s2.length))*100);
+    }
+
+    async function initSynths() {
+        if(!correctSound){
+            await Tone.start();
+            correctSound = new Tone.Synth().toDestination();
+            completionSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            transitionSynth = new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:0.01,decay:0.1,sustain:0,release:0.1}}).toDestination();
+            errorSynth = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:0.05,decay:0.2,sustain:0.2,release:0.4}}).toDestination();
+        }
+    }
+
+    function stopAllMedia() {
+        if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();isRecording=false;}
+    }
+
+    function updateProgress() {
+        const container=document.getElementById('progress-container');
+        const bar=document.getElementById('progress-bar');
+        const text=document.getElementById('progress-text');
+        if(currentPage===0){container.classList.add('hidden');return;}
+        container.classList.remove('hidden');container.classList.add('flex');
+        const total=TOTAL_PAGES-1;
+        bar.style.width=`${(currentPage/total)*100}%`;
+        text.innerText=`${currentPage}/${total}`;
+    }
+
+    function loadPage(index) {
+        stopAllMedia();
+        document.getElementById('popup-overlay').classList.add('hidden');
+        document.getElementById('controls-area').classList.remove('hidden');
+        if(index===0) document.getElementById('btn-prev').classList.add('invisible');
+        else document.getElementById('btn-prev').classList.remove('invisible');
+        updateProgress();
+        document.getElementById('btn-next-text').innerText='Suivant';
+        document.getElementById('btn-next').disabled=false;
+        currentPage=index;
+        switch(index){
+            case 0: renderPage0(); break;
+            case 1: renderPage1(); break;
+            case 2: renderPage2(); break;
+        }
+    }
+
+    // ── PAGE 0: Intro ─────────────────────────────────────────────────────────────
+    function renderPage0() {
+        document.getElementById('content-area').innerHTML=`
+            <div class="text-yellow-500 animate-fade-in"><i class="ph-fill ph-storefront text-icon"></i></div>
+            <div class="flex flex-col items-center justify-center gap-2 w-full text-center">
+                <h3 class="text-[clamp(0.75rem,2vw,1rem)] text-gray-500 font-bold uppercase m-0 tracking-wide">Mission débutant - Aller au convenience store</h3>
+                <h1 class="text-title text-green-600 animate-fade-in m-0 leading-tight">Jeu de rôle : 편의점 마스터</h1>
+            </div>
+        `;
+        document.getElementById('btn-next-text').innerText='Commencer';
+    }
+
+    // ── PAGE 1: Mission brief ─────────────────────────────────────────────────────
+    function renderPage1() {
+        document.getElementById('content-area').innerHTML=`
+            <div class="flex flex-col items-center w-full max-w-lg animate-fade-in" style="gap:clamp(1rem,3vh,2rem)">
+                <h2 class="text-title text-green-600 m-0 text-center">Jeu de rôle : 편의점 마스터</h2>
+                <div class="mission-box w-full text-center">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0 mb-2">Mission</p>
+                    <p class="text-body m-0 font-semibold text-gray-800">
+                        편의점에서 <span class="text-red-500 font-bold">맥주, 치킨</span>을 삽니다.<br>
+                        <span class="text-red-500 font-bold">교통 카드</span>를 <span class="text-red-500 font-bold">만 원</span> 충전합니다.<br>
+                        <span class="text-red-500 font-bold">영수증</span>은 받지 않습니다.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full">
+                    <button id="btn-understood" class="flex-1 control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm">
+                        <i class="ph ph-check mr-2"></i>J'ai compris, c'est parti !
+                    </button>
+                    <button id="btn-explain" class="flex-1 control-btn bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+                        <i class="ph ph-question mr-2"></i>Attends, je n'ai pas compris !
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('controls-area').classList.add('hidden');
+        document.getElementById('btn-understood').onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            loadPage(2);
+        };
+        document.getElementById('btn-explain').onclick=()=>{
+            document.getElementById('popup-content').innerHTML=`
+                <div class="text-4xl">🛒</div>
+                <p class="text-body text-center m-0 text-gray-700">Achetez de la bière et du poulet dans un « 편의점 ». Rechargez votre carte de transport de 10 000 wons. Ne prenez pas le ticket de caisse.</p>
+                <button id="btn-ok" class="control-btn bg-green-500 text-white hover:bg-green-600 w-full max-w-[200px]">OK <i class="ph ph-check ml-1"></i></button>
+            `;
+            document.getElementById('popup-overlay').classList.remove('hidden');
+            document.getElementById('btn-ok').onclick=()=>document.getElementById('popup-overlay').classList.add('hidden');
+            document.getElementById('btn-close-popup').onclick=()=>document.getElementById('popup-overlay').classList.add('hidden');
+        };
+    }
+
+    // ── PAGE 2: 아이템 선택 ────────────────────────────────────────────────────────
+    function renderPage2() {
+        const items=['🍌','🪥','🧃','🍗','🍎','🍺'];
+        document.getElementById('content-area').innerHTML=`
+            <div class="flex flex-col items-center animate-fade-in w-full max-w-lg" style="gap:clamp(1rem,3vh,2rem)">
+                <div class="mission-box text-center w-full">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0 mb-1">Mission</p>
+                    <p class="text-body font-semibold text-gray-800 m-0">Choisissez un (des) article(s) à acheter.</p>
+                </div>
+                <div class="flex items-center justify-center gap-3 flex-wrap w-full">
+                    ${items.map(it=>`<button class="item-btn" data-item="${it}">${it}</button>`).join('')}
+                </div>
+                <div id="action-area" class="w-full flex justify-center" style="min-height:clamp(2.5rem,6vh,3.5rem)"></div>
+            </div>
+        `;
+        document.getElementById('controls-area').classList.add('hidden');
+
+        selectedItems.forEach(it=>{
+            const b=document.querySelector(`[data-item="${it}"]`);
+            if(b) b.classList.add('selected');
+        });
+        if(selectedItems.length>0) renderPage2Btn();
+
+        document.querySelectorAll('.item-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                const it=btn.getAttribute('data-item');
+                if(btn.classList.contains('selected')){
+                    btn.classList.remove('selected');
+                    selectedItems=selectedItems.filter(i=>i!==it);
+                } else {
+                    btn.classList.add('selected');
+                    if(!selectedItems.includes(it)) selectedItems.push(it);
+                }
+                if(selectedItems.length>0) renderPage2Btn();
+                else document.getElementById('action-area').innerHTML='';
+            });
+        });
+    }
+
+    function renderPage2Btn() {
+        document.getElementById('action-area').innerHTML=`
+            <button id="btn-caisse" class="bg-green-500 text-white hover:bg-green-600 shadow-sm rounded-xl font-bold transition-all flex items-center justify-center gap-2 w-full" style="padding:clamp(0.5rem,2vw,0.75rem) clamp(0.75rem,3vw,1.25rem);font-size:clamp(0.8rem,2.2vw,1rem);white-space:normal;text-align:center;line-height:1.4;">
+                <i class="ph ph-arrow-right flex-shrink-0"></i><span>J'ai fini de choisir. Je passe à la caisse.</span>
+            </button>
+        `;
+        document.getElementById('btn-caisse').onclick=()=>{
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            // Page 3 결과 기록
+            results.chicken = selectedItems.includes('🍗');
+            // 맥주는 Convo 1 통과 후 확정
+            // gesture context에서 모든 오디오 미리 생성
+            const audios={
+                c1:  new Audio(AUDIO_URLS.c1),
+                c22: new Audio(AUDIO_URLS.c22),
+                c3:  new Audio(AUDIO_URLS.c3),
+                c4:  new Audio(AUDIO_URLS.c4),
+                c5:  new Audio(AUDIO_URLS.c5)
+            };
+            enterConvos(audios);
+        };
+    }
+
+    // ── PAGE 3: Convo 시퀀스 ────────────────────────────────────────────────────
+    function enterConvos(audios) {
+        currentPage=3;
+        updateProgress();
+        document.getElementById('controls-area').classList.add('hidden');
+        runConvo1(audios);
+    }
+
+    // ── Convo 1: 교통카드 제시 ────────────────────────────────────────────────────
+    function runConvo1(audios) {
+        showPopupCard('🪪', audios.c1, ()=>showSpeaking({
+            reference: '여기요',
+            threshold: 80,
+            statusId: 'sp-status',
+            onDone: (passed, recognized) => {
+                convo1Passed = passed;
+                if(selectedItems.includes('🍺') && passed) results.beer = true;
+                setTimeout(()=>runConvo21(audios), 1000);
+            }
+        }));
+    }
+
+    // ── Convo 2-1: 교통카드 충전 요청 ───────────────────────────────────────────
+    function runConvo21(audios) {
+        // 오디오 없이 바로 speaking 카드
+        showSpeakingWithLabel({
+            label: 'Demandez au caissier de recharger votre carte de transport.',
+            reference: '교통카드 충전해 주세요', // 판정용 (부분 일치도 체크)
+            threshold: 80,
+            statusId: 'sp-status',
+            onDone: (recognized) => {
+                const fullMatch = calcSim(recognized, '교통카드 만 원 충전해 주세요') >= 80;
+                const partialMatch = calcSim(recognized, '교통카드 충전해 주세요') >= 80;
+                if(fullMatch) {
+                    // 완전 통과 → Convo 3 직행
+                    convo21Result = 'full';
+                    results.transport = true;
+                    setTimeout(()=>runConvo3(audios), 1000);
+                } else if(partialMatch) {
+                    // 부분 통과 → Convo 2-2
+                    convo21Result = 'partial';
+                    results.transport = true; // 2-2도 통과로 간주 (실라버스: OR)
+                    setTimeout(()=>runConvo22(audios), 1000);
+                } else {
+                    // 탈락 → Convo 3
+                    convo21Result = 'fail';
+                    setTimeout(()=>runConvo3(audios), 1000);
+                }
+            }
+        });
+    }
+
+    // ── Convo 2-2: 금액 추가 질문 ────────────────────────────────────────────────
+    function runConvo22(audios) {
+        showPopupCard('💰', audios.c22, ()=>showSpeaking({
+            reference: '만 원',
+            threshold: 0, // "만 원" 포함 여부로만 판정 (별도 처리)
+            statusId: 'sp-status',
+            onDone: (passed, recognized) => {
+                // "만 원" 포함이면 통과 (이미 transport=true이므로 변경 없음)
+                // 포함 안 되면 탈락 (transport는 2-1 partial 통과로 이미 true)
+                setTimeout(()=>runConvo3(audios), 1000);
+            },
+            customCheck: (recognized) => recognized.includes('만') || recognized.includes('10000') || recognized.includes('10,000')
+        }));
+    }
+
+    // ── Convo 3: 결제 금액 제시 ──────────────────────────────────────────────────
+    function runConvo3(audios) {
+        showPopupCard('24,000 KRW 💰', audios.c3, ()=>showSpeaking({
+            reference: '여기요',
+            threshold: 80,
+            statusId: 'sp-status',
+            onDone: (passed, recognized) => {
+                setTimeout(()=>runConvo4(audios), 1000);
+            }
+        }));
+    }
+
+    // ── Convo 4: 영수증 ──────────────────────────────────────────────────────────
+    function runConvo4(audios) {
+        showPopupCard('🧾', audios.c4, ()=>showSpeaking({
+            reference: '아니요',
+            threshold: 0,
+            statusId: 'sp-status',
+            onDone: (passed, recognized) => {
+                // "아니요" 포함 여부
+            },
+            customCheck: (recognized) => recognized.includes('아니요') || recognized.includes('아니오'),
+            onResult: (passed) => {
+                results.noReceipt = passed;
+                setTimeout(()=>runConvo5(audios), 1000);
+            }
+        }));
+    }
+
+    // ── Convo 5: 작별 인사 ───────────────────────────────────────────────────────
+    function runConvo5(audios) {
+        showPopupCard('😄', audios.c5, ()=>showSpeaking({
+            reference: '안녕히 계세요',
+            threshold: 100,
+            statusId: 'sp-status',
+            onDone: (passed, recognized) => {
+                results.bye = passed;
+                showExitButton();
+            }
+        }));
+    }
+
+    // ── 공통 팝업 카드 (audio-only) ────────────────────────────────────────────────
+    function showPopupCard(visual, audio, onEnd) {
+        const overlay=document.getElementById('popup-overlay');
+        overlay.classList.remove('hidden');
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        const content=document.getElementById('popup-content');
+
+        // 이모지인지 텍스트인지에 따라 크기 조정
+        const isEmoji = /^\p{Emoji}/u.test(visual) && visual.length <= 4;
+        const visualHtml = isEmoji
+            ? `<div class="text-[clamp(4rem,15vw,6rem)] leading-none">${visual}</div>`
+            : `<h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full text-center">${visual}</h2>`;
+
+        content.innerHTML=`
+            ${visualHtml}
+            <div class="flex items-center justify-center gap-4 w-full h-16">
+                <div id="card-wave" class="audio-wave h-full w-full"><span></span><span></span><span></span><span></span></div>
+            </div>
+        `;
+        if(popupAudio){try{popupAudio.pause();}catch(e){} popupAudio=null;}
+        popupAudio=audio;
+        popupAudio.currentTime=0;
+        popupAudio.play().catch(e=>console.log(e));
+        popupAudio.onended=()=>{
+            const wave=document.getElementById('card-wave');
+            if(wave) wave.classList.add('hidden');
+            setTimeout(onEnd, 600);
+        };
+    }
+
+    // ── Speaking 카드 (표준: reference 기준 일치도) ───────────────────────────────
+    // opts: { reference, threshold, statusId, onDone(passed, recognized), customCheck?, onResult? }
+    function showSpeaking(opts) {
+        const content=document.getElementById('popup-content');
+        content.innerHTML=`
+            <div class="flex items-center justify-center gap-5 w-full h-16">
+                <button id="btn-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                    <i class="ph-fill ph-microphone text-3xl"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-center min-h-[2rem] w-full">
+                <p id="sp-status" class="text-sm font-bold text-gray-500 text-center w-full m-0">Appuyez sur le micro pour parler</p>
+            </div>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        document.getElementById('btn-record').onclick=()=>toggleRecord(opts, document.getElementById('btn-record'));
+    }
+
+    // ── Speaking 카드 (라벨 포함) ─────────────────────────────────────────────────
+    function showSpeakingWithLabel(opts) {
+        const content=document.getElementById('popup-content');
+        content.innerHTML=`
+            <p class="text-sm font-bold text-yellow-700 text-center w-full m-0">${opts.label}</p>
+            <div class="flex items-center justify-center gap-5 w-full h-16">
+                <button id="btn-record" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                    <i class="ph-fill ph-microphone text-3xl"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-center min-h-[2rem] w-full">
+                <p id="sp-status" class="text-sm font-bold text-gray-500 text-center w-full m-0">Appuyez sur le micro pour parler</p>
+            </div>
+        `;
+        document.getElementById('btn-close-popup').classList.add('invisible');
+        document.getElementById('btn-record').onclick=()=>toggleRecordConvo21(opts, document.getElementById('btn-record'));
+    }
+
+    // ── 녹음 (일반 speaking) ──────────────────────────────────────────────────────
+    async function toggleRecord(opts, btnEl) {
+        if(btnEl.disabled||btnEl.classList.contains('pointer-events-none')) return;
+        if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;return;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        try {
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            mediaRecorder=new MediaRecorder(stream);
+            audioChunks=[];
+            mediaRecorder.ondataavailable=e=>{if(e.data.size>0) audioChunks.push(e.data);};
+            mediaRecorder.onstop=async()=>{
+                const blob=new Blob(audioChunks,{type:'audio/webm'});
+                stream.getTracks().forEach(t=>t.stop());
+                processRecord(blob, opts, btnEl);
+            };
+            mediaRecorder.start();isRecording=true;
+            btnEl.classList.add('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-stop text-3xl"></i>`;
+            setTimeout(()=>{if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;}},6000);
+            const st=document.getElementById('sp-status');
+            if(st){st.innerHTML=`<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`;st.className='text-red-500 w-full text-center m-0';}
+        } catch(err){alert("L'accès au microphone est requis.");}
+    }
+
+    async function processRecord(blob, opts, btnEl) {
+        const reader=new FileReader();reader.readAsDataURL(blob);
+        reader.onloadend=async()=>{
+            const base64=reader.result.split(',')[1];
+            btnEl.classList.remove('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+            btnEl.disabled=true;btnEl.classList.add('pointer-events-none');
+            let recognized='';let apiOk=false;
+            try{
+                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:opts.reference,assessment:false})});
+                if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
+            }catch(e){console.error(e);}
+            const st=document.getElementById('sp-status');
+            if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+
+            let passed=false;
+            if(apiOk){
+                if(opts.customCheck) passed=opts.customCheck(recognized);
+                else passed=calcSim(recognized,opts.reference)>=opts.threshold;
+            }
+            if(opts.onResult) opts.onResult(passed);
+            if(opts.onDone) opts.onDone(passed, recognized);
+        };
+    }
+
+    // ── 녹음 (Convo 2-1 전용: 두 레퍼런스 체크) ─────────────────────────────────
+    async function toggleRecordConvo21(opts, btnEl) {
+        if(btnEl.disabled||btnEl.classList.contains('pointer-events-none')) return;
+        if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;return;}
+        if(popupAudio){popupAudio.pause();popupAudio.currentTime=0;}
+        try {
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            mediaRecorder=new MediaRecorder(stream);
+            audioChunks=[];
+            mediaRecorder.ondataavailable=e=>{if(e.data.size>0) audioChunks.push(e.data);};
+            mediaRecorder.onstop=async()=>{
+                const blob=new Blob(audioChunks,{type:'audio/webm'});
+                stream.getTracks().forEach(t=>t.stop());
+                processRecordConvo21(blob, opts, btnEl);
+            };
+            mediaRecorder.start();isRecording=true;
+            btnEl.classList.add('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-stop text-3xl"></i>`;
+            setTimeout(()=>{if(isRecording){stopRecording();btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;}},6000);
+            const st=document.getElementById('sp-status');
+            if(st){st.innerHTML=`<div class="audio-wave h-full mt-1"><span></span><span></span><span></span><span></span></div>`;st.className='text-red-500 w-full text-center m-0';}
+        } catch(err){alert("L'accès au microphone est requis.");}
+    }
+
+    async function processRecordConvo21(blob, opts, btnEl) {
+        const reader=new FileReader();reader.readAsDataURL(blob);
+        reader.onloadend=async()=>{
+            const base64=reader.result.split(',')[1];
+            btnEl.classList.remove('recording-pulse');
+            btnEl.innerHTML=`<i class="ph-fill ph-spinner-gap animate-spin text-3xl"></i>`;
+            btnEl.disabled=true;btnEl.classList.add('pointer-events-none');
+            let recognized='';let apiOk=false;
+            try{
+                // 두 레퍼런스를 모두 체크하기 위해 더 긴 레퍼런스로 전사
+                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:'교통카드 만 원 충전해 주세요',assessment:false})});
+                if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
+            }catch(e){console.error(e);}
+            const st=document.getElementById('sp-status');
+            if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
+            if(opts.onDone) opts.onDone(recognized);
+        };
+    }
+
+    function stopRecording() {
+        if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();isRecording=false;}
+    }
+
+    // ── 종료 버튼 ─────────────────────────────────────────────────────────────────
+    function showExitButton() {
+        const content=document.getElementById('popup-content');
+        content.innerHTML=`
+            <div class="flex flex-col items-center gap-4 w-full text-center">
+                <div class="text-5xl">🚪</div>
+                <button id="btn-exit" class="control-btn bg-green-500 text-white hover:bg-green-600 shadow-sm w-full max-w-[280px]">
+                    <i class="ph ph-sign-out mr-2"></i>Sortir du magasin
+                </button>
+            </div>
+        `;
+        document.getElementById('btn-exit').onclick=()=>{
+            document.getElementById('popup-overlay').classList.add('hidden');
+            renderResult();
+        };
+    }
+
+    // ── PAGE 4: Result ────────────────────────────────────────────────────────────
+    function renderResult() {
+        stopAllMedia();
+        currentPage=4;
+        updateProgress();
+        document.getElementById('popup-overlay').classList.add('hidden');
+        document.getElementById('controls-area').classList.add('hidden');
+
+        const missions=[
+            {label:'치킨 사기 Acheter du poulet',        success: results.chicken},
+            {label:'맥주 사기 Acheter de la bière',       success: results.beer},
+            {label:'교통카드 만 원 충전하기 Rechargez la carte de transport de 10 000 wons', success: results.transport},
+            {label:'영수증은 받지 않기 Ne pas recevoir le ticket de caisse', success: results.noReceipt}
+        ];
+
+        // 결과 메시지: 4개 미션 + 안녕히 계세요 포함해서 계산
+        const successCount=missions.filter(m=>m.success).length + (results.bye?1:0);
+
+        let resultMsg='';
+        if(successCount<=1)      resultMsg="Beau travail. Tentez à nouveau peut-être ?";
+        else if(successCount<=3) resultMsg="C'était pas mal ! Vous ferez encore mieux la prochaine fois.";
+        else                     resultMsg="Excellent ! Vous avez réussi toutes les missions !";
+
+        const missionsHtml=missions.map(m=>`
+            <div class="flex items-center gap-3 w-full">
+                <span class="text-2xl">${m.success?'✅':'❌'}</span>
+                <span class="text-body text-gray-700 font-semibold text-sm">${m.label}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('content-area').innerHTML=`
+            <div class="flex flex-col items-center gap-4 animate-pop-in w-full max-w-md text-center">
+                <div class="text-[clamp(2.5rem,8vw,4rem)]">${successCount>=4?'🏆':successCount>=2?'🌟':'💪'}</div>
+                <div class="bg-white border-2 border-gray-100 rounded-2xl p-5 w-full flex flex-col gap-3">
+                    <p class="text-[clamp(0.75rem,1.8vw,0.9rem)] font-bold text-yellow-700 uppercase tracking-wider m-0">Missions</p>
+                    ${missionsHtml}
+                </div>
+                <div class="mission-box w-full text-center">
+                    <p class="text-body font-semibold text-yellow-800 m-0">${resultMsg}</p>
+                </div>
+            </div>
+        `;
+
+        if(successCount>=3){
+            if(completionSynth) completionSynth.triggerAttackRelease(["C5","E5","G5","C6"],"4n");
+        } else {
+            if(errorSynth){
+                const now=Tone.now();
+                errorSynth.triggerAttackRelease("A3","0.3s",now);
+                errorSynth.triggerAttackRelease("F3","0.3s",now+0.35);
+                errorSynth.triggerAttackRelease("D3","0.5s",now+0.7);
+            }
+        }
+        window.parent.postMessage({type:'lesson_complete'},'*');
+    }
+
+    // ── 네비게이션 ────────────────────────────────────────────────────────────────
+    window.addEventListener('beforeunload', stopAllMedia);
+
+    document.getElementById('btn-next').addEventListener('click', async()=>{
+        if(currentPage===0){
+            await initSynths();
+            if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+            loadPage(1);
+            return;
+        }
+        if(transitionSynth) transitionSynth.triggerAttackRelease('E5','0.05s');
+        loadPage(currentPage+1);
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', ()=>{
+        if(currentPage>0){
+            if(transitionSynth) transitionSynth.triggerAttackRelease('C5','0.05s');
+            loadPage(currentPage-1);
+        }
+    });
+
+    loadPage(0);
+</script>
+</body>
+</html>
