@@ -77,7 +77,8 @@
         c22:  'https://res.cloudinary.com/de76i94ia/video/upload/v1775764050/4S-3_wfjihe.mp3',
         c3:   'https://res.cloudinary.com/de76i94ia/video/upload/v1776247380/Jeu_1_iqkodc.wav',
         c4:   'https://res.cloudinary.com/de76i94ia/video/upload/v1775292504/2-S9_o31zzp.mp3',
-        c5:   'https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3'
+        c5:   'https://res.cloudinary.com/de76i94ia/video/upload/v1774888051/S-4_a2ludm.mp3',
+        oops: 'https://res.cloudinary.com/de76i94ia/video/upload/v1776184778/case_3_cnwra7.mp3'
     };
 
     // ── 상태 ─────────────────────────────────────────────────────────────────────
@@ -100,6 +101,7 @@
     // Convo 중간 상태
     let convo1Passed = false;
     let convo21Result = null; // 'full' | 'partial' | 'fail'
+    let oopsCount = 0; // 전체 레슨에서 😅 사용 총 횟수 (최대 4회)
 
     // ── 유틸 ─────────────────────────────────────────────────────────────────────
     function calcSim(s1, s2) {
@@ -211,7 +213,7 @@
         document.getElementById('btn-explain').onclick=()=>{
             document.getElementById('popup-content').innerHTML=`
                 <div class="text-4xl">🛒</div>
-                <p class="text-body text-center m-0 text-gray-700">Achetez de la bière et du poulet dans un « 편의점 ». Rechargez votre carte de transport de 10 000 wons. Ne prenez pas le ticket de caisse.</p>
+                <p class="text-body text-center m-0 text-gray-700">Achetez de la bière et du poulet dans un « 편의점 ». <br> Rechargez votre carte de transport de 10 000 wons. <br> Ne prenez pas le ticket de caisse.</p>
                 <button id="btn-ok" class="control-btn bg-green-500 text-white hover:bg-green-600 w-full max-w-[200px]">OK <i class="ph ph-check ml-1"></i></button>
             `;
             document.getElementById('popup-overlay').classList.remove('hidden');
@@ -271,12 +273,19 @@
             results.chicken = selectedItems.includes('🍗');
             // 맥주는 Convo 1 통과 후 확정
             // gesture context에서 모든 오디오 미리 생성
+            // 최악의 경우: 각 Convo 최대 3회 시도, 😅 최대 4회
             const audios={
-                c1:  new Audio(AUDIO_URLS.c1),
-                c22: new Audio(AUDIO_URLS.c22),
-                c3:  new Audio(AUDIO_URLS.c3),
-                c4:  new Audio(AUDIO_URLS.c4),
-                c5:  new Audio(AUDIO_URLS.c5)
+                c1:   [new Audio(AUDIO_URLS.c1),  new Audio(AUDIO_URLS.c1),  new Audio(AUDIO_URLS.c1)],
+                c22:  [new Audio(AUDIO_URLS.c22), new Audio(AUDIO_URLS.c22), new Audio(AUDIO_URLS.c22)],
+                c3:   [new Audio(AUDIO_URLS.c3),  new Audio(AUDIO_URLS.c3),  new Audio(AUDIO_URLS.c3)],
+                c4:   [new Audio(AUDIO_URLS.c4),  new Audio(AUDIO_URLS.c4),  new Audio(AUDIO_URLS.c4)],
+                c5:   new Audio(AUDIO_URLS.c5),
+                oops: [
+                    new Audio(AUDIO_URLS.oops), new Audio(AUDIO_URLS.oops),
+                    new Audio(AUDIO_URLS.oops), new Audio(AUDIO_URLS.oops)
+                ],
+                // 인덱스 추적
+                _c1i:0, _c22i:0, _c3i:0, _c4i:0
             };
             enterConvos(audios);
         };
@@ -285,124 +294,191 @@
     // ── PAGE 3: Convo 시퀀스 ────────────────────────────────────────────────────
     function enterConvos(audios) {
         currentPage=3;
+        oopsCount=0;
         updateProgress();
         document.getElementById('controls-area').classList.add('hidden');
         runConvo1(audios);
     }
 
-    // ── Convo 1: 교통카드 제시 ────────────────────────────────────────────────────
-    function runConvo1(audios) {
-        showPopupCard('🪪', audios.c1, ()=>showSpeaking({
-            reference: '여기요',
-            threshold: 80,
-            statusId: 'sp-status',
-            onDone: (passed, recognized) => {
-                convo1Passed = passed;
-                if(selectedItems.includes('🍺') && passed) results.beer = true;
-                setTimeout(()=>runConvo21(audios), 1000);
+    // ── 😅 재시도 헬퍼 ────────────────────────────────────────────────────────────
+    // 전역 oopsCount가 4 미만이면 😅 → 원래 카드 오디오 → speakingFn
+    // 4 이상이면 😅 없이 바로 다음 콜백 실행
+    function tryOopsRetry(audios, retryCardAudio, speakingFn, skipFn) {
+        if(oopsCount >= 4) {
+            skipFn();
+            return;
+        }
+        const oopsAudio = audios.oops[oopsCount];
+        oopsCount++;
+        showPopupCard('😅', oopsAudio, () => {
+            if(retryCardAudio) {
+                showPopupCard(null, retryCardAudio, speakingFn);
+            } else {
+                speakingFn();
             }
-        }));
+        });
+    }
+
+    // ── Convo 1: 교통카드 제시 (최대 3회 발화, 전역 oopsCount 공유) ─────────────
+    function runConvo1(audios, attempt=1) {
+        showPopupCard('🪪', audios.c1[audios._c1i++], ()=>doConvo1Speaking(audios, attempt));
+    }
+
+    function doConvo1Speaking(audios, attempt) {
+        showSpeaking({
+            reference:'여기요', threshold:80,
+            onDone:(passed)=>{
+                if(passed) {
+                    convo1Passed=true;
+                    if(selectedItems.includes('🍺')) results.beer=true;
+                    setTimeout(()=>runConvo21(audios),1000);
+                } else if(attempt>=3) {
+                    convo1Passed=false;
+                    setTimeout(()=>runConvo21(audios),1000);
+                } else {
+                    // 재시도: 😅 → 원래 카드 오디오 → speaking
+                    setTimeout(()=>tryOopsRetry(
+                        audios,
+                        audios.c1[audios._c1i++],
+                        ()=>doConvo1Speaking(audios, attempt+1),
+                        ()=>{ convo1Passed=false; setTimeout(()=>runConvo21(audios),500); }
+                    ), 500);
+                }
+            }
+        });
     }
 
     // ── Convo 2-1: 교통카드 충전 요청 ───────────────────────────────────────────
-    function runConvo21(audios) {
-        // 오디오 없이 바로 speaking 카드
+    function runConvo21(audios, attempt=1) {
         showSpeakingWithLabel({
-            label: 'Demandez au caissier de recharger votre carte de transport.',
-            reference: '교통카드 충전해 주세요', // 판정용 (부분 일치도 체크)
-            threshold: 80,
-            statusId: 'sp-status',
-            onDone: (recognized) => {
-                const fullMatch = calcSim(recognized, '교통카드 만 원 충전해 주세요') >= 80;
-                const partialMatch = calcSim(recognized, '교통카드 충전해 주세요') >= 80;
-                if(fullMatch) {
-                    // 완전 통과 → Convo 3 직행
-                    convo21Result = 'full';
-                    results.transport = true;
-                    setTimeout(()=>runConvo3(audios), 1000);
-                } else if(partialMatch) {
-                    // 부분 통과 → Convo 2-2
-                    convo21Result = 'partial';
-                    results.transport = true; // 2-2도 통과로 간주 (실라버스: OR)
-                    setTimeout(()=>runConvo22(audios), 1000);
+            label:'Demandez au caissier de recharger votre carte de transport.',
+            onDone:(recognized)=>{
+                // fullMatch: "교통카드 충전" + "만 원" 모두 포함 (순수 유사도만으로는 false positive 발생)
+                const hasCharge  = calcSim(recognized,'교통카드충전해주세요')>=80;
+                const hasManWon  = recognized.includes('만') && (recognized.includes('원') || recognized.includes('만원'));
+                const fullMatch  = hasCharge && hasManWon;
+                const partialMatch = hasCharge && !hasManWon;
+                if(fullMatch){
+                    convo21Result='full'; results.transport=true;
+                    setTimeout(()=>runConvo3(audios),1000);
+                } else if(partialMatch){
+                    convo21Result='partial'; results.transport=true;
+                    setTimeout(()=>runConvo22(audios),1000);
                 } else {
-                    // 탈락 → Convo 3
-                    convo21Result = 'fail';
-                    setTimeout(()=>runConvo3(audios), 1000);
+                    if(attempt>=3){
+                        convo21Result='fail';
+                        setTimeout(()=>runConvo3(audios),1000);
+                    } else {
+                        setTimeout(()=>tryOopsRetry(
+                            audios,
+                            null,
+                            ()=>runConvo21(audios, attempt+1),
+                            ()=>{ convo21Result='fail'; setTimeout(()=>runConvo3(audios),500); }
+                        ),500);
+                    }
                 }
             }
         });
     }
 
     // ── Convo 2-2: 금액 추가 질문 ────────────────────────────────────────────────
-    function runConvo22(audios) {
-        showPopupCard('💰', audios.c22, ()=>showSpeaking({
-            reference: '만 원',
-            threshold: 0, // "만 원" 포함 여부로만 판정 (별도 처리)
-            statusId: 'sp-status',
-            onDone: (passed, recognized) => {
-                // "만 원" 포함이면 통과 (이미 transport=true이므로 변경 없음)
-                // 포함 안 되면 탈락 (transport는 2-1 partial 통과로 이미 true)
-                setTimeout(()=>runConvo3(audios), 1000);
-            },
-            customCheck: (recognized) => recognized.includes('만') || recognized.includes('10000') || recognized.includes('10,000')
-        }));
+    function runConvo22(audios, attempt=1) {
+        showPopupCard('💰', audios.c22[audios._c22i++], ()=>doConvo22Speaking(audios, attempt));
+    }
+
+    function doConvo22Speaking(audios, attempt) {
+        showSpeaking({
+            reference:'만 원', threshold:0,
+            customCheck:(r)=>r.includes('만')||r.includes('10000')||r.includes('10,000'),
+            onDone:(passed)=>{
+                if(passed || attempt>=3) {
+                    setTimeout(()=>runConvo3(audios),1000);
+                } else {
+                    setTimeout(()=>tryOopsRetry(
+                        audios,
+                        audios.c22[audios._c22i++],
+                        ()=>doConvo22Speaking(audios, attempt+1),
+                        ()=>setTimeout(()=>runConvo3(audios),500)
+                    ),500);
+                }
+            }
+        });
     }
 
     // ── Convo 3: 결제 금액 제시 ──────────────────────────────────────────────────
-    function runConvo3(audios) {
-        showPopupCard('24,000 KRW 💰', audios.c3, ()=>showSpeaking({
-            reference: '여기요',
-            threshold: 80,
-            statusId: 'sp-status',
-            onDone: (passed, recognized) => {
-                setTimeout(()=>runConvo4(audios), 1000);
+    function runConvo3(audios, attempt=1) {
+        showPopupCard('24,000 KRW 💰', audios.c3[audios._c3i++], ()=>doConvo3Speaking(audios, attempt));
+    }
+
+    function doConvo3Speaking(audios, attempt) {
+        showSpeaking({
+            reference:'여기요', threshold:80,
+            onDone:(passed)=>{
+                if(passed || attempt>=3) {
+                    setTimeout(()=>runConvo4(audios),1000);
+                } else {
+                    setTimeout(()=>tryOopsRetry(
+                        audios,
+                        audios.c3[audios._c3i++],
+                        ()=>doConvo3Speaking(audios, attempt+1),
+                        ()=>setTimeout(()=>runConvo4(audios),500)
+                    ),500);
+                }
             }
-        }));
+        });
     }
 
     // ── Convo 4: 영수증 ──────────────────────────────────────────────────────────
-    function runConvo4(audios) {
-        showPopupCard('🧾', audios.c4, ()=>showSpeaking({
-            reference: '아니요',
-            threshold: 0,
-            statusId: 'sp-status',
-            onDone: (passed, recognized) => {
-                // "아니요" 포함 여부
-            },
-            customCheck: (recognized) => recognized.includes('아니요') || recognized.includes('아니오'),
-            onResult: (passed) => {
-                results.noReceipt = passed;
-                setTimeout(()=>runConvo5(audios), 1000);
-            }
-        }));
+    function runConvo4(audios, attempt=1) {
+        showPopupCard('🧾', audios.c4[audios._c4i++], ()=>doConvo4Speaking(audios, attempt));
     }
 
-    // ── Convo 5: 작별 인사 ───────────────────────────────────────────────────────
+    function doConvo4Speaking(audios, attempt) {
+        showSpeaking({
+            reference:'아니요', threshold:0,
+            customCheck:(r)=>r.includes('아니요')||r.includes('아니오'),
+            onDone:(passed)=>{
+                if(passed || attempt>=3) {
+                    results.noReceipt=passed;
+                    setTimeout(()=>runConvo5(audios),1000);
+                } else {
+                    setTimeout(()=>tryOopsRetry(
+                        audios,
+                        audios.c4[audios._c4i++],
+                        ()=>doConvo4Speaking(audios, attempt+1),
+                        ()=>{ results.noReceipt=false; setTimeout(()=>runConvo5(audios),500); }
+                    ),500);
+                }
+            }
+        });
+    }
+
+    // ── Convo 5: 작별 인사 (재시도 없음) ─────────────────────────────────────────
     function runConvo5(audios) {
         showPopupCard('😄', audios.c5, ()=>showSpeaking({
-            reference: '안녕히 계세요',
-            threshold: 100,
-            statusId: 'sp-status',
-            onDone: (passed, recognized) => {
-                results.bye = passed;
+            reference:'안녕히 계세요', threshold:100,
+            onDone:(passed)=>{
+                results.bye=passed;
                 showExitButton();
             }
         }));
     }
 
     // ── 공통 팝업 카드 (audio-only) ────────────────────────────────────────────────
-    function showPopupCard(visual, audio, onEnd) {
+    // visual=null이면 오디오만 재생 (재시도용 원래 카드 반복 시)
+    function showPopupCard(visual, audio, onEnd, audioOnly=false) {
         const overlay=document.getElementById('popup-overlay');
         overlay.classList.remove('hidden');
         document.getElementById('btn-close-popup').classList.add('invisible');
         const content=document.getElementById('popup-content');
 
-        // 이모지인지 텍스트인지에 따라 크기 조정
-        const isEmoji = /^\p{Emoji}/u.test(visual) && visual.length <= 4;
-        const visualHtml = isEmoji
-            ? `<div class="text-[clamp(4rem,15vw,6rem)] leading-none">${visual}</div>`
-            : `<h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full text-center">${visual}</h2>`;
+        let visualHtml='';
+        if(visual){
+            const isShortEmoji=/^\p{Emoji}/u.test(visual)&&visual.length<=4;
+            visualHtml=isShortEmoji
+                ?`<div class="text-[clamp(4rem,15vw,6rem)] leading-none">${visual}</div>`
+                :`<h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 m-0 break-words leading-tight w-full text-center">${visual}</h2>`;
+        }
 
         content.innerHTML=`
             ${visualHtml}
@@ -417,12 +493,12 @@
         popupAudio.onended=()=>{
             const wave=document.getElementById('card-wave');
             if(wave) wave.classList.add('hidden');
-            setTimeout(onEnd, 600);
+            setTimeout(onEnd,600);
         };
     }
 
-    // ── Speaking 카드 (표준: reference 기준 일치도) ───────────────────────────────
-    // opts: { reference, threshold, statusId, onDone(passed, recognized), customCheck?, onResult? }
+    // ── Speaking 카드 ─────────────────────────────────────────────────────────────
+    // opts: { reference, threshold, onDone(passed, recognized), customCheck? }
     function showSpeaking(opts) {
         const content=document.getElementById('popup-content');
         content.innerHTML=`
@@ -436,10 +512,11 @@
             </div>
         `;
         document.getElementById('btn-close-popup').classList.add('invisible');
-        document.getElementById('btn-record').onclick=()=>toggleRecord(opts, document.getElementById('btn-record'));
+        document.getElementById('btn-record').onclick=()=>toggleRecord(opts,document.getElementById('btn-record'));
     }
 
-    // ── Speaking 카드 (라벨 포함) ─────────────────────────────────────────────────
+    // ── Speaking 카드 (라벨 포함, Convo 2-1 전용) ─────────────────────────────────
+    // opts: { label, onDone(recognized) }
     function showSpeakingWithLabel(opts) {
         const content=document.getElementById('popup-content');
         content.innerHTML=`
@@ -454,7 +531,7 @@
             </div>
         `;
         document.getElementById('btn-close-popup').classList.add('invisible');
-        document.getElementById('btn-record').onclick=()=>toggleRecordConvo21(opts, document.getElementById('btn-record'));
+        document.getElementById('btn-record').onclick=()=>toggleRecordConvo21(opts,document.getElementById('btn-record'));
     }
 
     // ── 녹음 (일반 speaking) ──────────────────────────────────────────────────────
@@ -496,13 +573,11 @@
             }catch(e){console.error(e);}
             const st=document.getElementById('sp-status');
             if(st){st.innerHTML=recognized?`<span class="text-gray-600">"${recognized}"</span>`:'';st.className='text-sm font-bold text-center w-full m-0';}
-
             let passed=false;
             if(apiOk){
                 if(opts.customCheck) passed=opts.customCheck(recognized);
                 else passed=calcSim(recognized,opts.reference)>=opts.threshold;
             }
-            if(opts.onResult) opts.onResult(passed);
             if(opts.onDone) opts.onDone(passed, recognized);
         };
     }
