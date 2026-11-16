@@ -198,9 +198,17 @@
         let mediaRecorder, audioChunks = [], isRecording = false, inlineRecTimeout;
 
         const BASE_44_ORIGIN = "https://coreeno.base44.app"; 
-        const CLOVA_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
-        const GEMINI_API_FUNCTION_URL = BASE_44_ORIGIN + '/api/functions/Geminichat';
-        const GEMINI_SYSTEM_INSTRUCTION = "유저는 한국어를 배우는 A1 수준 학생으로 “… 있어요?” 구조를 활용해 편의점에 원하는 물건이 있는지 묻는다. 응답은 유저의 답을 그대로 전사하는 <Transcription>, 유저의 응답을 상황의 적절성 (편의점), 어휘의 정확도, 문법, 맞춤법을 기준으로 점수/20 형태로 평가하는 <Score>, 그리고 프랑스어로 감점 요인을 설명하는 <explication>란으로 구분한다. Explication은 20점이 아닌 경우에만 작성하며 2문장 이내로 매우 짧고 간결하게 설명한다.";
+
+        const GEMINI_URL = BASE_44_ORIGIN + '/functions/GeminiChatSecure';
+
+        // Permit reception from parent page (coreeno:permit postMessage)
+        let lessonPermit = null;
+        let lessonId = null;
+        window.addEventListener("message", (event) => {
+          if (event.data?.type !== "coreeno:permit") return;
+          lessonPermit = event.data.permit;
+          lessonId = event.data.lesson_id;
+        });
 
         function calculateSimilarity(str1, str2) {
             const s1 = (str1 || "").replace(/[^가-힣a-zA-Z0-9]/g, '');
@@ -533,31 +541,25 @@
                 let bestScore = 0;
                 let apiSuccess = false;
                 
-                for(const r of refs) {
-                    try {
-                        const res = await fetch(CLOVA_API_FUNCTION_URL, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify({ 
-                                audioBase64: base64, 
-                                languageCode: "Kor",
-                                referenceText: r,
-                                assessment: false
-                            }) 
-                        });
-                        
-                        if (res.ok) { 
-                            apiSuccess = true;
-                            const json = await res.json(); 
-                            const recognizedText = json.text || json.recognized || "";
-                            
+                try {
+                    const res = await fetch(GEMINI_URL, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ inline_data: { mime_type: "audio/webm", data: base64 } }] }], systemInstruction: `유저의 한국어 발화를 전사한다.
+1. 한글 외에 다른 문자는 사용할 수 없음.
+2. 발화를 하지 않는 구간이나 외국어로 발화하는 구간은 전사하지 않는다.
+3. 의미 없는 filler word나 말더듬기, 공백 등은 삭제하고 실제 단어나 문장만 전사한다.
+4. 문법, 발음 오류는 교정 없이 들리는 대로 전사한다.`, model: "gemini-3.8-flash", permit: lessonPermit, lesson_id: lessonId })
+                    });
+                    if (res.ok) {
+                        apiSuccess = true;
+                        const json = await res.json();
+                        const recognizedText = json.text || json.recognized || "";
+                        for (const r of refs) {
                             const sim = calculateSimilarity(recognizedText, r);
-                            if(sim > bestScore) bestScore = sim;
+                            if (sim > bestScore) bestScore = sim;
                         }
-                    } catch (e) {
-                        console.error("STT Error:", e);
                     }
-                }
+                } catch (e) { console.error(e); }
                 
                 const status = document.getElementById('popup-status');
                 
@@ -681,7 +683,7 @@
                     const mimeType = blob.type ? blob.type.split(';')[0] : 'audio/webm';
 
                     try {
-                        const res = await fetch(GEMINI_API_FUNCTION_URL, {
+                        const res = await fetch(GEMINI_URL, {
                             method: 'POST', 
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -698,8 +700,10 @@
                                         ]
                                     }
                                 ],
-                                systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
-                                model: "gemini-2.5-flash"
+                                systemInstruction: "유저는 한국어를 배우는 A1 수준 학생으로 “… 있어요?” 구조를 활용해 편의점에 원하는 물건이 있는지 묻는다. 응답은 유저의 답을 그대로 전사하는 <Transcription>, 유저의 응답을 상황의 적절성 (편의점), 어휘의 정확도, 문법, 맞춤법을 기준으로 점수/20 형태로 평가하는 <Score>, 그리고 프랑스어로 감점 요인을 설명하는 <explication>란으로 구분한다. Explication은 20점이 아닌 경우에만 작성하며 2문장 이내로 매우 짧고 간결하게 설명한다.",
+                                model: "gemini-3.8-flash",
+                                permit: lessonPermit,
+                                lesson_id: lessonId
                             })
                         });
                         
