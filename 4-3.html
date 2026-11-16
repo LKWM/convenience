@@ -70,7 +70,16 @@
     // ── 상수 ─────────────────────────────────────────────────────────────────────
     const TOTAL_PAGES = 5; // 0:intro 1:mission 2:items 3:convo 4:result
     const BASE_44_ORIGIN = "https://coreeno.base44.app";
-    const CLOVA_URL = BASE_44_ORIGIN + '/api/functions/naverClovaSpeech';
+    const GEMINI_URL = BASE_44_ORIGIN + '/functions/GeminiChatSecure';
+
+    // Permit reception from parent page (coreeno:permit postMessage)
+    let lessonPermit = null;
+    let lessonId = null;
+    window.addEventListener("message", (event) => {
+      if (event.data?.type !== "coreeno:permit") return;
+      lessonPermit = event.data.permit;
+      lessonId = event.data.lesson_id;
+    });
 
     const AUDIO_URLS = {
         c1:   'https://res.cloudinary.com/de76i94ia/video/upload/v1775764041/4S-1_wr1zn4.mp3',
@@ -558,8 +567,12 @@
             btnEl.disabled=true;btnEl.classList.add('pointer-events-none');
             let recognized='';let apiOk=false;
             try{
-                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:opts.reference,assessment:false})});
+                const res=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ inline_data: { mime_type: "audio/webm", data: base64 } }] }], systemInstruction: `유저의 한국어 발화를 전사한다.
+1. 한글 외에 다른 문자는 사용할 수 없음.
+2. 발화를 하지 않는 구간이나 외국어로 발화하는 구간은 전사하지 않는다.
+3. 의미 없는 filler word나 말더듬기, 공백 등은 삭제하고 실제 단어나 문장만 전사한다.
+4. 문법, 발음 오류는 교정 없이 들리는 대로 전사한다.`, model: "gemini-3.8-flash", permit: lessonPermit, lesson_id: lessonId })});
                 if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
             }catch(e){console.error(e);}
             const st=document.getElementById('sp-status');
@@ -607,8 +620,12 @@
             let recognized='';let apiOk=false;
             try{
                 // 두 레퍼런스를 모두 체크하기 위해 더 긴 레퍼런스로 전사
-                const res=await fetch(CLOVA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({audioBase64:base64,languageCode:"Kor",referenceText:'교통카드 만 원 충전해 주세요',assessment:false})});
+                const res=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ inline_data: { mime_type: "audio/webm", data: base64 } }] }], systemInstruction: `유저의 한국어 발화를 전사한다.
+1. 한글 외에 다른 문자는 사용할 수 없음.
+2. 발화를 하지 않는 구간이나 외국어로 발화하는 구간은 전사하지 않는다.
+3. 의미 없는 filler word나 말더듬기, 공백 등은 삭제하고 실제 단어나 문장만 전사한다.
+4. 문법, 발음 오류는 교정 없이 들리는 대로 전사한다.`, model: "gemini-3.8-flash", permit: lessonPermit, lesson_id: lessonId })});
                 if(res.ok){apiOk=true;const j=await res.json();recognized=j.text||j.recognized||"";}
             }catch(e){console.error(e);}
             const st=document.getElementById('sp-status');
